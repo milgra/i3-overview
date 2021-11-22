@@ -1,0 +1,25 @@
+# distance between workspaces
+gap 5
+
+# color of lines and text
+foreground_color #224466FF
+
+# default background color
+background_color_passive #000022FF
+
+# active background color
+background_color_active #222266FF
+
+# font face, use any string that is output by fc-list
+font_face Terminus (TTF):style=Bold
+
+# size of font
+font_size 12
+
+# font index in font file, leave it 0 if you are unsure
+font_index 0
+
+# millisecs to wait before showing up the overview
+# useful when you don't want to see it at every workspace switch
+# just when you are unsure and leave the meta key pressed
+show_delay 0

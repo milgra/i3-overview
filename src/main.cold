@@ -1,0 +1,61 @@
+#include <gtk/gtk.h>
+#include "listener.c"
+
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/extensions/XInput.h>
+#include <X11/extensions/XInput2.h>
+
+int main (int argc, char *argv[])
+{
+
+  XInitThreads();
+
+  gtk_init (&argc, &argv);
+
+  const int Width = 920, Height = 200;
+    char *buffer = (char*)malloc(3 * Width * Height);
+
+    for (int y=0;y<Height;y++)
+      {
+	for (int x = 0; x < Width; x++)
+	  {
+	    int i = (y * Width * 3) + x * 3;
+	    buffer[i] = rand() % 255;
+	    buffer[i+1] = rand() % 255;
+	    buffer[i+2] = rand() % 255;
+	  }
+      }
+    
+    // Read a raw image data from the disk and put it in the buffer.
+    // ....
+
+    GtkWidget *window;
+    GtkWidget* image;
+
+    GdkWindow *root_window = gdk_get_default_root_window();
+
+    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+
+    listener_set_window(window);
+    listener_start(); // destroy 2
+    
+    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data (buffer, GDK_COLORSPACE_RGB,
+        FALSE, 8, Width, Height, Width*3, NULL, NULL);
+
+    gtk_window_set_title (GTK_WINDOW (window), "Image Viewer");
+
+    g_signal_connect (window, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+
+    image = gtk_image_new_from_pixbuf (pixbuf);
+    gtk_container_add(GTK_CONTAINER (window), image);
+
+    
+    gtk_widget_show_all (window);
+    gtk_widget_hide(window);
+    
+    gtk_main();
+
+    free (buffer);
+    return 0;
+}
