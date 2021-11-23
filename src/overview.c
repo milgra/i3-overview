@@ -30,6 +30,53 @@ struct
   char  panel_visible;
 } zm = {0};
 
+GtkWidget* window = NULL;
+GtkWidget* image  = NULL;
+bm_t*      bm     = NULL;
+
+void show()
+{
+  vec_t* workspaces = VNEW(); // RET 0
+
+  analyzer_get(workspaces);
+
+  i3_workspace_t* ws  = workspaces->data[0];
+  i3_workspace_t* wsl = workspaces->data[workspaces->length - 1];
+
+  if (ws->width > 0 && ws->height > 0)
+  {
+    int gap  = 25;
+    int cols = 5;
+    int rows = (int)ceilf((float)wsl->number / 5.0);
+
+    int lay_wth = cols * (ws->width / 8) + (cols + 1) * gap;
+    int lay_hth = rows * (ws->height / 8) + (rows + 1) * gap;
+
+    // create texture bitmap
+
+    if (bm == NULL || bm->w != lay_wth || bm->h != lay_hth)
+    {
+      bm = bm_new(lay_wth, lay_hth); // REL 0
+    }
+
+    renderer_draw(bm, workspaces);
+
+    REL(workspaces);
+
+    GdkPixbuf* pixbuf = gdk_pixbuf_new_from_data(bm->data, GDK_COLORSPACE_RGB, TRUE, 8, bm->w, bm->h, bm->w * 4, NULL, NULL);
+
+    gtk_image_set_from_pixbuf((GtkImage*)image, pixbuf);
+  }
+  gtk_window_resize(GTK_WINDOW(window), bm->w, bm->h);
+  gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ALWAYS);
+  gtk_widget_show(window);
+}
+
+void hide()
+{
+  gtk_widget_hide(window);
+}
+
 int main(int argc, char* argv[])
 {
   printf("i3-overview v%i.%i by Milan Toth\n", VERSION, BUILD);
@@ -120,14 +167,10 @@ int main(int argc, char* argv[])
   // Read a raw image data from the disk and put it in the buffer.
   // ....
 
-  GtkWidget* window;
-  GtkWidget* image;
-
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   image  = gtk_image_new();
 
-  listener_set_window(window, image);
-  listener_start(); // destroy 2
+  listener_start(show, hide); // destroy 2
 
   gtk_window_set_title(GTK_WINDOW(window), "Image Viewer");
 
@@ -154,39 +197,4 @@ int main(int argc, char* argv[])
 #ifdef DEBUG
   mem_stats();
 #endif
-}
-
-bm_t* bm = NULL;
-
-void tg_overview_gen()
-{
-  // analyzer workspaces
-
-  vec_t* workspaces = VNEW(); // RET 0
-
-  analyzer_get(workspaces);
-
-  i3_workspace_t* ws  = workspaces->data[0];
-  i3_workspace_t* wsl = workspaces->data[workspaces->length - 1];
-
-  if (ws->width > 0 && ws->height > 0)
-  {
-    int gap  = 25;
-    int cols = 5;
-    int rows = (int)ceilf((float)wsl->number / 5.0);
-
-    int lay_wth = cols * (ws->width / 8) + (cols + 1) * gap;
-    int lay_hth = rows * (ws->height / 8) + (rows + 1) * gap;
-
-    // create texture bitmap
-
-    if (bm == NULL || bm->w != lay_wth || bm->h != lay_hth)
-    {
-      bm = bm_new(lay_wth, lay_hth); // REL 0
-    }
-
-    renderer_draw(bm, workspaces);
-  }
-
-  REL(workspaces);
 }
