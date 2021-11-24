@@ -25,7 +25,7 @@ typedef struct _i3_workspace_t
   vec_t* windows;
 } i3_workspace_t;
 
-void analyzer_get(vec_t* workspaces);
+void analyzer_extract(char* ws_json, char* tree_json, vec_t* workspaces);
 
 #endif
 
@@ -89,22 +89,9 @@ char* i3_get_value(vec_t* vec, int pos, char* path)
   return NULL;
 }
 
-void analyzer_get(vec_t* workspaces)
+void analyzer_extract(char* ws_json, char* tree_json, vec_t* workspaces)
 {
-  char buff[100] = {0};
-
-  // get i3 workspaces
-
-  FILE* pipe = popen("i3-msg -t get_workspaces", "r"); // CLOSE 0
-  char* cstr = cstr_new_cstring("{\"items\":");        // REL 0
-
-  while (fgets(buff, sizeof(buff), pipe) != NULL) cstr = cstr_append(cstr, buff);
-
-  cstr = cstr_append(cstr, "}");
-  pclose(pipe); // CLOSE 0
-
-  vec_t* json = json_parse(cstr);
-  REL(cstr); // REL 1
+  vec_t* json = json_parse(ws_json);
 
   for (int index = 0; index < json->length; index += 2)
   {
@@ -157,19 +144,7 @@ void analyzer_get(vec_t* workspaces)
 
   REL(json);
 
-  // get windows
-
-  // get i3 tree
-
-  pipe = popen("i3-msg -t get_tree", "r"); // CLOSE 0
-  cstr = cstr_new_cstring("");             // REL 0
-
-  while (fgets(buff, sizeof(buff), pipe) != NULL) cstr = cstr_append(cstr, buff);
-
-  pclose(pipe); // CLOSE 0
-
-  json = json_parse(cstr);
-  REL(cstr); // REL 0
+  json = json_parse(tree_json);
 
   int curr_wspc_n = 0;
 
