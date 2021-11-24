@@ -2,7 +2,6 @@
 #include "config.c"
 #include "fontconfig.c"
 #include "kvlines.c"
-#include "listener.c"
 #include "renderer.c"
 #include "text_ft.c"
 #include "zc_bitmap.c"
@@ -31,8 +30,6 @@ struct
   char  meta_state;
   char  panel_visible;
 } zm = {0};
-
-bm_t* bm = NULL;
 
 int alive = 1;
 
@@ -67,6 +64,8 @@ int main(int argc, char* argv[])
       printf("-o --output= [path] \t render to file \n");
     }
   }
+
+  bm_t* bitmap = NULL;
 
   if (zm.output_par == NULL)
   {
@@ -176,16 +175,16 @@ int main(int argc, char* argv[])
 
         XIDeviceEvent* event = cookie->data;
 
-        // printf("    device: %d (%d)\n", event->deviceid, event->sourceid);
-        // printf("    detail: %d\n", event->detail);
+        printf("    device: %d (%d)\n", event->deviceid, event->sourceid);
+        printf("    detail: %d\n", event->detail);
 
         switch (event->evtype)
         {
         case XI_KeyPress:
+          if (event->detail == 9) alive = 0;
           if (event->detail == 133 || meta_pressed)
           {
             if (event->detail == 133) meta_pressed = 1;
-            // (*l_show)();
 
             char buff[100] = {0};
 
@@ -235,6 +234,7 @@ int main(int argc, char* argv[])
 
               if (wd1 != lay_wth || ht1 != lay_hth)
               {
+                printf("RESIZE!!! %i %i\n", wd1, ht1);
                 XResizeWindow(display, view_win, lay_wth, lay_hth);
 
                 int snum   = DefaultScreen(display);
@@ -260,38 +260,51 @@ int main(int argc, char* argv[])
                 window_mapped = 1;
               }
 
+              XGetWindowAttributes(display, view_win, &gwa);
+
+              wd1 = gwa.width;
+              ht1 = gwa.height;
+
+              printf("AFTER RESIZE %i %i\n", wd1, ht1);
+
               // create texture bitmap
 
-              if (bm == NULL || bm->w != lay_wth || bm->h != lay_hth)
+              if (bitmap == NULL || bitmap->w != lay_wth || bitmap->h != lay_hth)
               {
-                bm = bm_new(lay_wth, lay_hth); // REL 0
+                if (bitmap != NULL) REL(bitmap);
+                bitmap = bm_new(lay_wth, lay_hth); // REL 0
               }
 
-              renderer_draw(bm, workspaces);
+              renderer_draw(bitmap, workspaces);
 
               XImage* image = XGetImage(display, view_win, 0, 0, lay_wth, lay_hth, AllPlanes, ZPixmap);
 
               for (int y = 0; y < lay_hth; y++)
+              {
                 for (int x = 0; x < lay_wth; x++)
                 {
                   int      index = y * lay_wth * 4 + x * 4;
-                  uint8_t  r     = bm->data[index];
-                  uint8_t  g     = bm->data[index + 1];
-                  uint8_t  b     = bm->data[index + 2];
+                  uint8_t  r     = bitmap->data[index];
+                  uint8_t  g     = bitmap->data[index + 1];
+                  uint8_t  b     = bitmap->data[index + 2];
                   uint32_t pixel = (r << 16) | (g << 8) | b;
                   XPutPixel(image, x, y, pixel);
                 }
+              }
 
               GC gc = XCreateGC(display, view_win, 0, NULL);
               XPutImage(display, view_win, gc, image, 0, 0, 0, 0, lay_wth, lay_hth);
+              XFreeGC(display, gc);
+
+              XDestroyImage(image);
             }
+
+            REL(workspaces);
           }
           break;
         case XI_KeyRelease:
           if (event->detail == 133)
           {
-            //(*l_hide)();
-
             XUnmapWindow(display, view_win);
 
             meta_pressed  = 0;
@@ -343,12 +356,13 @@ int main(int argc, char* argv[])
 
       // create texture bitmap
 
-      if (bm == NULL || bm->w != lay_wth || bm->h != lay_hth)
+      if (bitmap == NULL || bitmap->w != lay_wth || bitmap->h != lay_hth)
       {
-        bm = bm_new(lay_wth, lay_hth); // REL 0
+        if (bitmap) REL(bitmap);
+        bitmap = bm_new(lay_wth, lay_hth); // REL 0
       }
 
-      renderer_draw(bm, workspaces);
+      renderer_draw(bitmap, workspaces);
 
       // save gitmap to output file
 
@@ -357,6 +371,8 @@ int main(int argc, char* argv[])
       REL(workspaces);
     }
   }
+
+  if (bitmap) REL(bitmap);
 
   if (zm.cfg_par) REL(zm.cfg_par);             // REL 0
   if (zm.ws_json_par) REL(zm.ws_json_par);     // REL 0
