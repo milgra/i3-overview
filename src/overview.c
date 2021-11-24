@@ -26,9 +26,6 @@ struct
   char* ws_json_par;
   char* tree_json_par;
   char* output_par;
-  char  showpanel;
-  char  meta_state;
-  char  panel_visible;
 } zm = {0};
 
 int alive = 1;
@@ -175,8 +172,8 @@ int main(int argc, char* argv[])
 
         XIDeviceEvent* event = cookie->data;
 
-        printf("    device: %d (%d)\n", event->deviceid, event->sourceid);
-        printf("    detail: %d\n", event->detail);
+        /* printf("    device: %d (%d)\n", event->deviceid, event->sourceid); */
+        /* printf("    detail: %d\n", event->detail); */
 
         switch (event->evtype)
         {
@@ -234,7 +231,6 @@ int main(int argc, char* argv[])
 
               if (wd1 != lay_wth || ht1 != lay_hth)
               {
-                printf("RESIZE!!! %i %i\n", wd1, ht1);
                 XResizeWindow(display, view_win, lay_wth, lay_hth);
 
                 int snum   = DefaultScreen(display);
@@ -264,8 +260,6 @@ int main(int argc, char* argv[])
 
               wd1 = gwa.width;
               ht1 = gwa.height;
-
-              printf("AFTER RESIZE %i %i\n", wd1, ht1);
 
               // create texture bitmap
 
@@ -329,6 +323,7 @@ int main(int argc, char* argv[])
     REL(font_path);    // REL 3
 
     config_destroy(); // destroy 1
+    text_ft_destroy();
   }
   else
   {
