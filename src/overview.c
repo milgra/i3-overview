@@ -13,6 +13,8 @@
 #include <X11/extensions/XInput.h>
 #include <X11/extensions/XInput2.h>
 #include <getopt.h>
+#include <gtk/gtk.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -34,47 +36,98 @@ GtkWidget* window = NULL;
 GtkWidget* image  = NULL;
 bm_t*      bm     = NULL;
 
-void show()
+int f_show  = 0;
+int f_hide  = 0;
+int visible = 0;
+int resize  = 0;
+
+gboolean redraw(gpointer data)
 {
-  vec_t* workspaces = VNEW(); // RET 0
-
-  analyzer_get(workspaces);
-
-  i3_workspace_t* ws  = workspaces->data[0];
-  i3_workspace_t* wsl = workspaces->data[workspaces->length - 1];
-
-  if (ws->width > 0 && ws->height > 0)
+  if (f_show)
   {
-    int gap  = 25;
-    int cols = 5;
-    int rows = (int)ceilf((float)wsl->number / 5.0);
+    vec_t* workspaces = VNEW(); // RET 0
 
-    int lay_wth = cols * (ws->width / 8) + (cols + 1) * gap;
-    int lay_hth = rows * (ws->height / 8) + (rows + 1) * gap;
+    analyzer_get(workspaces);
 
-    // create texture bitmap
+    i3_workspace_t* ws  = workspaces->data[0];
+    i3_workspace_t* wsl = workspaces->data[workspaces->length - 1];
 
-    if (bm == NULL || bm->w != lay_wth || bm->h != lay_hth)
+    if (ws->width > 0 && ws->height > 0)
     {
-      bm = bm_new(lay_wth, lay_hth); // REL 0
-    }
+      int gap  = 25;
+      int cols = 5;
+      int rows = (int)ceilf((float)wsl->number / 5.0);
 
-    renderer_draw(bm, workspaces);
+      int lay_wth = cols * (ws->width / 8) + (cols + 1) * gap;
+      int lay_hth = rows * (ws->height / 8) + (rows + 1) * gap;
+
+      // create texture bitmap
+
+      if (bm == NULL || bm->w != lay_wth || bm->h != lay_hth)
+      {
+        bm     = bm_new(lay_wth, lay_hth); // REL 0
+        resize = 1;
+      }
+
+      renderer_draw(bm, workspaces);
+
+      GdkPixbuf* pb = gdk_pixbuf_new_from_data(bm->data, GDK_COLORSPACE_RGB, TRUE, 8, bm->w, bm->h, bm->w * 4, NULL, NULL);
+
+      gtk_image_set_from_pixbuf((GtkImage*)image, pb);
+
+      g_object_unref(pb);
+    }
 
     REL(workspaces);
 
-    GdkPixbuf* pixbuf = gdk_pixbuf_new_from_data(bm->data, GDK_COLORSPACE_RGB, TRUE, 8, bm->w, bm->h, bm->w * 4, NULL, NULL);
+    if (!visible)
+    {
+      /* if (resize) */
+      /* { */
+      /*   resize = 0; */
+      /* } */
+      gtk_widget_show(window);
 
-    gtk_image_set_from_pixbuf((GtkImage*)image, pixbuf);
+      gint rwidth, rheight;
+
+      // get screen geom
+
+      GdkWindow* root = gtk_widget_get_root_window(GTK_WIDGET(window));
+
+      gdk_window_get_geometry(root, NULL, NULL, &rwidth, &rheight);
+
+      gtk_window_resize(GTK_WINDOW(window), bm->w, bm->h);
+
+      gtk_window_move(GTK_WINDOW(window), (rwidth - bm->w) / 2, (rheight - bm->h) / 2);
+
+      visible = 1;
+    }
+    f_show = 0;
   }
-  gtk_window_resize(GTK_WINDOW(window), bm->w, bm->h);
-  gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ALWAYS);
-  gtk_widget_show(window);
+
+  if (f_hide)
+  {
+    if (visible)
+    {
+      gtk_widget_hide(window);
+      visible = 0;
+    }
+    f_hide = 0;
+  }
+
+  return TRUE;
+}
+
+void show()
+{
+  f_show = 1;
+  redraw(NULL);
 }
 
 void hide()
 {
-  gtk_widget_hide(window);
+  f_hide = 1;
+  redraw(NULL);
 }
 
 int main(int argc, char* argv[])
@@ -182,6 +235,9 @@ int main(int argc, char* argv[])
   gtk_widget_hide(window);
 
   gtk_main();
+
+  g_object_unref(window);
+  g_object_unref(image);
 
   // cleanup
 

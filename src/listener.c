@@ -1,6 +1,5 @@
 #ifndef listener_h
 #define listener_h
-#include <gtk/gtk.h>
 
 void listener_start(void (*show)(void), void (*hide)(void));
 void listener_destroy();
@@ -9,9 +8,6 @@ void listener_destroy();
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "analyzer.c"
-#include "renderer.c"
-#include "zc_bitmap.c"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XInput.h>
@@ -21,54 +17,10 @@ void listener_destroy();
 #include <stdlib.h>
 
 int listener_alive = 1;
+int meta_pressed   = 0;
 
 void (*l_show)(void);
 void (*l_hide)(void);
-
-static void print_deviceevent(XIDeviceEvent* event)
-{
-  double* val;
-  int     i;
-
-  printf("    device: %d (%d)\n", event->deviceid, event->sourceid);
-  printf("    detail: %d\n", event->detail);
-  switch (event->evtype)
-  {
-  case XI_KeyPress:
-    printf("    flags: %s\n", (event->flags & XIKeyRepeat) ? "repeat" : "");
-    if (event->detail == 133) (*l_show)();
-    break;
-  case XI_KeyRelease:
-    printf("    flags: %s\n", (event->flags & XIKeyRepeat) ? "repeat" : "");
-    if (event->detail == 133) (*l_hide)();
-    break;
-  }
-
-  /* printf("    root: %.2f/%.2f\n", event->root_x, event->root_y); */
-  /* printf("    event: %.2f/%.2f\n", event->event_x, event->event_y); */
-
-  /* printf("    buttons:"); */
-  /* for (i = 0; i < event->buttons.mask_len * 8; i++) */
-  /*   if (XIMaskIsSet(event->buttons.mask, i)) */
-  /*     printf(" %d", i); */
-  /* printf("\n"); */
-
-  /* printf("    modifiers: locked %#x latched %#x base %#x effective: %#x\n", */
-  /*        event->mods.locked, event->mods.latched, */
-  /*        event->mods.base, event->mods.effective); */
-  /* printf("    group: locked %#x latched %#x base %#x effective: %#x\n", */
-  /*        event->group.locked, event->group.latched, */
-  /*        event->group.base, event->group.effective); */
-  /* printf("    valuators:\n"); */
-
-  /* val = event->valuators.values; */
-  /* for (i = 0; i < event->valuators.mask_len * 8; i++) */
-  /*   if (XIMaskIsSet(event->valuators.mask, i)) */
-  /*     printf("        %i: %.2f\n", i, *val++); */
-
-  /* printf("    windows: root 0x%lx event 0x%lx child 0x%lx\n", */
-  /*        event->root, event->event, event->child); */
-}
 
 void* listener_start_thread()
 {
@@ -107,13 +59,37 @@ void* listener_start_thread()
     XGenericEventCookie* cookie = (XGenericEventCookie*)&ev.xcookie;
     XNextEvent(display, (XEvent*)&ev);
 
-    printf("LOOP\n");
     if (XGetEventData(display, cookie) &&
         cookie->type == GenericEvent &&
         cookie->extension == xi_opcode)
     {
-      printf("EVENT type %d\n", cookie->evtype);
-      print_deviceevent(cookie->data);
+
+      XIDeviceEvent* event = cookie->data;
+
+      // printf("    device: %d (%d)\n", event->deviceid, event->sourceid);
+      // printf("    detail: %d\n", event->detail);
+
+      switch (event->evtype)
+      {
+      case XI_KeyPress:
+        if (event->detail == 133)
+        {
+          (*l_show)();
+          meta_pressed = 1;
+        }
+        else if (meta_pressed)
+        {
+          (*l_show)();
+        }
+        break;
+      case XI_KeyRelease:
+        if (event->detail == 133)
+        {
+          (*l_hide)();
+          meta_pressed = 0;
+        }
+        break;
+      }
     }
 
     XFreeEventData(display, cookie);

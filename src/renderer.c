@@ -51,13 +51,18 @@ void renderer_draw(bm_t* bm, vec_t* workspaces)
     int cx = gap + (num - 1) % 5 * (wsw + gap);
     int cy = gap + (num - 1) / 5 * (wsh + gap);
 
+    if (ws->focused)
+    {
+      gfx_rect(bm, cx + 1, cy + 1, wsw - 2, wsh - 2, 0x222255FF, 0);
+    }
+
     // draw windows
 
     for (int wii = 0; wii < ws->windows->length; wii++)
     {
       i3_window_t* wi = ws->windows->data[wii];
 
-      if (strstr(wi->class, "i3-overview") == NULL)
+      if (strstr(wi->class, "overview") == NULL)
       {
         // draw window
 
