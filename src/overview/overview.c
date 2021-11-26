@@ -32,7 +32,7 @@ int alive = 1;
 
 void read_tree(vec_t* workspaces)
 {
-  char  buff[100] = {0};
+  char  buff[100];
   char* ws_json   = NULL; // REL 0
   char* tree_json = NULL; // REL 1
 
@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
           {
             int gap  = GAP;
             int cols = COLS;
-            int rows = (int)ceilf((float)wsl->number / 5.0);
+            int rows = (int)ceilf((float)wsl->number / COLS);
 
             int lay_wth = cols * (ws->width / 8) + (cols + 1) * gap;
             int lay_hth = rows * (ws->height / 8) + (rows + 1) * gap;
@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
               bitmap = bm_new(lay_wth, lay_hth); // REL 5
             }
 
-            tree_drawer_draw(bitmap, workspaces);
+            tree_drawer_draw(bitmap, workspaces, GAP, COLS, 8.0, config_get("font_path"));
 
             XImage* image = XGetImage(display, view_win, 0, 0, lay_wth, lay_hth, AllPlanes, ZPixmap); // DESTROY 3
 
