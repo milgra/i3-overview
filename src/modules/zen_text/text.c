@@ -1,10 +1,9 @@
 #ifndef text_h
 #define text_h
 
+#include "text.c"
 #include "zc_bitmap.c"
 #include "zc_string.c"
-#include "zc_vector.c"
-
 #include <stdint.h>
 
 typedef enum _textalign_t
@@ -35,9 +34,9 @@ typedef struct _textstyle_t
   vertalign_t valign;
   autosize_t  autosize;
   char        multiline;
+  int         line_height;
 
   float size;
-  int   line_height;
   int   margin;
   int   margin_top;
   int   margin_right;
@@ -110,79 +109,110 @@ void text_measure(str_t* text, textstyle_t style, int w, int h, int* nw, int* nh
 
 #if __INCLUDE_LEVEL__ == 0
 
+#include "text.c"
 #include "zc_graphics.c"
 #include "zc_map.c"
+#include "zc_wrapper.c"
 #include "zm_math2.c"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#define STB_TRUETYPE_IMPLEMENTATION
-#include "stb_truetype.h"
 
-struct _txt_t
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_GLYPH_H
+#include FT_BITMAP_H
+
+struct _txt_ft_t
 {
+  map_t*         libs;
   map_t*         fonts;
   unsigned char* gbytes; // byte array for glyph baking
   size_t         gcount; // byte array size for glyph baking
-} txt;
+} txt_ft;
 
 void text_init()
 {
-  txt.fonts  = MNEW();                        // GREL 0
-  txt.gbytes = malloc(sizeof(unsigned char)); // GREL 1
-  txt.gcount = 1;
+  txt_ft.libs   = MNEW();
+  txt_ft.fonts  = MNEW();                        // GREL 0
+  txt_ft.gbytes = malloc(sizeof(unsigned char)); // GREL 1
+  txt_ft.gcount = 1;
 }
 
 void text_destroy()
 {
-  vec_t* fonts = VNEW(); // REL 0
-  map_values(txt.fonts, fonts);
+  vec_t* paths = VNEW(); // REL 0
+  map_keys(txt_ft.fonts, paths);
 
-  for (int i = 0; i < fonts->length; i++)
+  for (int i = 0; i < paths->length; i++)
   {
-    stbtt_fontinfo* font = fonts->data[i];
-    free(font->data); // GREL 2
+    char* path = paths->data[i];
+
+    wrapper_t* face = MGET(txt_ft.fonts, path);
+    wrapper_t* lib  = MGET(txt_ft.libs, path);
+
+    FT_Done_Face(face->data);
+    FT_Done_FreeType(lib->data);
   }
 
-  REL(fonts);       // REL 0
-  REL(txt.fonts);   // GREL 0
-  free(txt.gbytes); // GREL 1
+  REL(paths); // REL 0
+
+  REL(txt_ft.libs);
+  REL(txt_ft.fonts); // GREL 0
+
+  free(txt_ft.gbytes); // GREL 1
 }
 
 void text_font_load(char* path)
 {
-  assert(txt.fonts != NULL);
+  assert(txt_ft.fonts != NULL);
 
-  struct stat filestat;
-  char        succ = stat(path, &filestat);
-  if (succ == 0 && filestat.st_size > 0)
+  FT_Library library;
+  FT_Face    face;
+
+  int error = FT_Init_FreeType(&library);
+  if (error == 0)
   {
-    FILE* file = fopen(path, "rb"); // CLOSE 0
-
-    if (file)
+    error = FT_New_Face(library,
+                        path,
+                        0,
+                        &face);
+    if (error == 0)
     {
-      unsigned char* data = malloc((size_t)filestat.st_size); // GREL 2
-      fread(data, (size_t)filestat.st_size, 1, file);
 
-      stbtt_fontinfo font;
-      stbtt_InitFont(&font, data, stbtt_GetFontOffsetForIndex(data, 0));
+      wrapper_t* libwrp  = wrapper_new(library);
+      wrapper_t* facewrp = wrapper_new(face);
 
-      MPUTR(txt.fonts, path, HEAP(font));
+      MPUTR(txt_ft.libs, path, libwrp);
+      MPUTR(txt_ft.fonts, path, facewrp);
 
-      printf("Font loaded %s txt.fonts in file %i\n", path, stbtt_GetNumberOfFonts(data));
+      if (error != 0)
+      {
+        printf("FT Set Char Size error\n");
+      }
 
-      fclose(file); // CLOSE 0
+      printf("Font loaded %s txt_ft.fonts in file %li\n", path, face->num_faces);
     }
     else
-      printf("cannot open font %s\n", path);
+    {
+      if (error == FT_Err_Unknown_File_Format)
+      {
+        printf("Unknown font file format\n");
+      }
+      else if (error)
+      {
+        printf("FT New Face error\n");
+      }
+    }
   }
   else
-    printf("cannot open font %s\n", path);
+    printf("FT_Init error\n");
 }
 
 // breaks text into lines in given rect
 // first step for further alignment
+
 void text_break_glyphs(
     glyph_t*    glyphs,
     int         count,
@@ -193,30 +223,44 @@ void text_break_glyphs(
     int*        nhth)
 {
 
-  stbtt_fontinfo* font = MGET(txt.fonts, style.font);
-  if (font == NULL)
+  wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
+  if (facewrp == NULL)
   {
     text_font_load(style.font);
-    font = MGET(txt.fonts, style.font);
-    if (!font) return;
+    facewrp = MGET(txt_ft.fonts, style.font);
+    if (!facewrp) return;
   }
 
-  int   spc_a, spc_p;      // actual space, prev space
-  int   asc, desc, lgap;   // glyph ascent, descent, linegap
-  int   lsb, advx;         // left side bearing, glyph advance
-  int   fonth, lineh;      // base height, line height
-  float scale, xpos, ypos; // font scale, position
+  FT_Face font = facewrp->data;
 
-  stbtt_GetFontVMetrics(font, &asc, &desc, &lgap);
-  scale = stbtt_ScaleForPixelHeight(font, style.size);
+  int   spc_a, spc_p;    // actual space, prev space
+  int   asc, desc, lgap; // glyph ascent, descent, linegap
+  int   lsb, advx;       // left side bearing, glyph advance
+  int   fonth, lineh;    // base height, line height
+  float xpos, ypos;      // font scale, position
+
+  int error = FT_Set_Char_Size(
+      font,            /* handle to face object           */
+      style.size * 64, /* char_width in 1/64th of points  */
+      0,               /* char_height in 1/64th of points */
+      72,              /* horizontal device resolution    */
+      72);             /* vertical device resolution      */
+
+  asc  = font->size->metrics.ascender >> 6;
+  desc = font->size->metrics.descender >> 6;
+  lgap = font->size->metrics.height >> 6;
 
   fonth = asc - desc;
   lineh = fonth + lgap;
 
+  if (style.line_height != 0) lineh = style.line_height;
+
+  // printf("asc %i desc %i lgap %i fonth %i lineh %i\n", asc, desc, lgap, fonth, lineh);
+
   spc_a = 0;
   spc_p = 0;
   xpos  = 0;
-  ypos  = (float)asc * scale;
+  ypos  = asc;
 
   for (int index = 0; index < count; index++)
   {
@@ -229,62 +273,89 @@ void text_break_glyphs(
     float x_shift = xpos - (float)floor(xpos); // subpixel shift along x
     float y_shift = ypos - (float)floor(ypos); // subpixel shift along y
 
-    stbtt_GetCodepointHMetrics(font,
-                               cp,
-                               &advx, // advance from base x pos to next base pos
-                               &lsb); // left side bearing
+    FT_UInt glyph_index  = FT_Get_Char_Index(font, cp);
+    FT_UInt nglyph_index = FT_Get_Char_Index(font, ncp);
+
+    error = FT_Load_Glyph(font, glyph_index, FT_LOAD_DEFAULT);
+    if (error) printf("FT LOAD CHAR ERROR\n");
+
+    /* printf("glyph loaded, width %li height %li horiBearingX %li horiBearingY %li horiAdvance %li vertBearingX %li vertBearingY %li vertAdvance %li\n", */
+    /*        font->glyph->metrics.width >> 6, */
+    /*        font->glyph->metrics.height >> 6, */
+    /*        font->glyph->metrics.horiBearingX >> 6, */
+    /*        font->glyph->metrics.horiBearingY >> 6, */
+    /*        font->glyph->metrics.horiAdvance >> 6, */
+    /*        font->glyph->metrics.vertBearingX >> 6, */
+    /*        font->glyph->metrics.vertBearingY >> 6, */
+    /*        font->glyph->metrics.vertAdvance >> 6); */
+
+    /* printf("advance x %li y %li linearHoriAdvance %li linearVertAdvance %li\n", */
+    /*        font->glyph->advance.x >> 6, */
+    /*        font->glyph->advance.y >> 6, */
+    /*        font->glyph->linearHoriAdvance >> 6, */
+    /*        font->glyph->linearVertAdvance >> 6); */
+
+    FT_Glyph glph;
+    FT_Get_Glyph(font->glyph, &glph);
+
+    FT_BBox bbox;
+    FT_Glyph_Get_CBox(glph, FT_GLYPH_BBOX_SUBPIXELS, &bbox); // FT_GLYPH_BBOX_GRIDFIT
+    FT_Done_Glyph(glph);
+
+    advx = font->glyph->advance.x >> 6;
+    lsb  = font->glyph->metrics.horiBearingX >> 6;
 
     // increase xpos with left side bearing if first character in line
     if (xpos == 0 && lsb < 0)
     {
-      xpos    = (float)-lsb * scale;
+      xpos    = (float)-lsb;
       x_shift = xpos - (float)floor(xpos); // subpixel shift
     }
 
-    stbtt_GetCodepointBitmapBoxSubpixel(font,
-                                        cp,
-                                        scale,
-                                        scale,
-                                        x_shift, // x axis subpixel shift
-                                        y_shift, // y axis subpixel shift
-                                        &x0,     // left edge of the glyph from origin
-                                        &y0,     // top edge of the glyph from origin
-                                        &x1,     // right edge of the glyph from origin
-                                        &y1);    // bottom edge of the glyph from origin
+    x0 = bbox.xMin >> 6;
+    y0 = bbox.yMin >> 6;
+    x1 = bbox.xMax >> 6;
+    y1 = bbox.yMax >> 6;
+
+    /* printf("x0 %i y0 %i x1 %i y1 %i\n", x0, y0, x1, y1); */
 
     int w = x1 - x0;
     int h = y1 - y0;
 
     int size = w * h;
 
-    // increase glyph baking bitmap size if needed
-    if (size > txt.gcount)
-    {
-      txt.gcount = size;
-      txt.gbytes = realloc(txt.gbytes, txt.gcount);
-    }
+    /* printf("w %i h %i size %i\n", w, h, size); */
 
     glyph.x       = xpos + x0;
     glyph.y       = ypos + y0;
     glyph.w       = w;
     glyph.h       = h;
-    glyph.x_scale = scale;
-    glyph.y_scale = scale;
     glyph.x_shift = x_shift;
     glyph.y_shift = y_shift;
     glyph.base_y  = ypos;
-    glyph.asc     = (float)asc * scale;
-    glyph.desc    = (float)desc * scale;
+    glyph.asc     = (float)asc;
+    glyph.desc    = (float)desc;
     glyph.cp      = cp;
 
+    // printf("glyph : %c x : %i y : %i\n", glyph.cp, glyph.x, glyph.y);
+
     // advance x axis
-    xpos += (advx * scale);
+    xpos += advx;
 
     // in case of space/invisible, set width based on pos
     if (w == 0) glyph.w = xpos - glyph.x;
 
+    FT_Vector kerning;
+    error = FT_Get_Kerning(font,               /* handle to face object */
+                           glyph_index,        /* left glyph index      */
+                           nglyph_index,       /* right glyph index     */
+                           FT_KERNING_DEFAULT, /* kerning mode          */
+                           &kerning);          /* target vector         */
+
+    // printf("kerning x %li y %li\n", kerning.x, kerning.y);
+
     // advance with kerning
-    if (ncp > 0) xpos += scale * stbtt_GetCodepointKernAdvance(font, cp, ncp);
+    if (ncp > 0) xpos += kerning.x;
 
     // line break
     if (cp == '\n' || cp == '\r') glyph.w = 0; // they should be invisible altough they get an empty unicode font face
@@ -307,7 +378,7 @@ void text_break_glyphs(
           spc_p = spc_a;
         }
         xpos = 0.0;
-        ypos += (float)lineh * scale;
+        ypos += (float)lineh;
       }
     }
   }
@@ -328,12 +399,14 @@ void text_align_glyphs(glyph_t*    glyphs,
     glyph_t head   = glyphs[0];
     glyph_t tail   = glyphs[count - 1];
     float   height = (tail.base_y - tail.desc) - (head.base_y - head.asc);
-    float   vs     = 1.0; // vertical shift
+    float   vs     = 0.0; // vertical shift
 
     if (style.valign == VA_CENTER) vs = (h - height) / 2.0;
-    if (style.valign == VA_BOTTOM) vs = h - height;
+    if (style.valign == VA_BOTTOM) vs = h - height - head.asc;
 
-    vs = roundf(vs) + 1.0; // TODO investigate this a little, maybe no magic numbers are needed
+    // printf("align h %i height %f vs %f\n", h, height, vs);
+
+    // vs = roundf(vs) + 1.0; // TODO investigate this a little, maybe no magic numbers are needed
 
     for (int i = 0; i < count; i++)
     {
@@ -387,6 +460,7 @@ void text_shift_glyphs(glyph_t*    glyphs,
 {
   int x = style.margin_left;
   int y = style.margin_top;
+
   for (int i = 0; i < count; i++)
   {
     glyphs[i].x += x;
@@ -399,44 +473,46 @@ void text_render_glyph(glyph_t g, textstyle_t style, bm_t* bitmap)
 {
   if (g.w > 0 && g.h > 0)
   {
-    gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
+    if ((style.backcolor & 0xFF) > 0) gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
 
-    // get or load font
-    stbtt_fontinfo* font = MGET(txt.fonts, style.font);
-    if (font == NULL)
+    wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
+    if (facewrp == NULL)
     {
       text_font_load(style.font);
-      font = MGET(txt.fonts, style.font);
-      if (!font) return;
+      facewrp = MGET(txt_ft.fonts, style.font);
+      if (!facewrp) return;
     }
+    FT_Face font = facewrp->data;
 
     int size = g.w * g.h;
 
     // increase glyph baking bitmap size if needed
-    if (size > txt.gcount)
+    if (size > txt_ft.gcount)
     {
-      txt.gcount = size;
-      txt.gbytes = realloc(txt.gbytes, txt.gcount);
+      txt_ft.gcount = size;
+      txt_ft.gbytes = realloc(txt_ft.gbytes, txt_ft.gcount);
     }
 
-    // bake
-    stbtt_MakeCodepointBitmapSubpixel(font,
-                                      txt.gbytes,
-                                      g.w,       // out widht
-                                      g.h,       // out height
-                                      g.w,       // out stride
-                                      g.x_scale, // scale x
-                                      g.y_scale, // scale y
-                                      g.x_shift, // shift x
-                                      g.y_shift, // shift y
-                                      g.cp);
+    int error = FT_Load_Char(font, g.cp, FT_LOAD_RENDER);
+    if (error)
+    {
+      printf("FT Load Char error\n");
+    }
+
+    error = FT_Render_Glyph(font->glyph, FT_RENDER_MODE_NORMAL);
+    if (error)
+    {
+      printf("FT_Render_Glyph error\n");
+    }
+
+    FT_Bitmap fontmap = font->glyph->bitmap;
 
     // insert to bitmap
     gfx_blend_8(bitmap,
                 0,
                 0,
                 style.textcolor,
-                txt.gbytes,
+                fontmap.buffer,
                 g.w,
                 g.h);
   }
@@ -447,16 +523,19 @@ void text_render_glyphs(glyph_t*    glyphs,
                         textstyle_t style,
                         bm_t*       bitmap)
 {
-  gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
+  if ((style.backcolor & 0xFF) > 0) gfx_rect(bitmap, 0, 0, bitmap->w, bitmap->h, style.backcolor, 0);
 
-  // get or load font
-  stbtt_fontinfo* font = MGET(txt.fonts, style.font);
-  if (font == NULL)
+  wrapper_t* facewrp = MGET(txt_ft.fonts, style.font);
+  wrapper_t* libwrp  = MGET(txt_ft.libs, style.font);
+  if (facewrp == NULL)
   {
     text_font_load(style.font);
-    font = MGET(txt.fonts, style.font);
-    if (!font) return;
+    facewrp = MGET(txt_ft.fonts, style.font);
+    libwrp  = MGET(txt_ft.libs, style.font);
+    if (!facewrp) return;
   }
+  FT_Face    font    = facewrp->data;
+  FT_Library library = libwrp->data;
 
   // draw glyphs
   for (int i = 0; i < count; i++)
@@ -469,30 +548,61 @@ void text_render_glyphs(glyph_t*    glyphs,
       int size = g.w * g.h;
 
       // increase glyph baking bitmap size if needed
-      if (size > txt.gcount)
+      if (size > txt_ft.gcount)
       {
-        txt.gcount = size;
-        txt.gbytes = realloc(txt.gbytes, txt.gcount);
+        txt_ft.gcount = size;
+        txt_ft.gbytes = realloc(txt_ft.gbytes, txt_ft.gcount);
       }
 
-      stbtt_MakeCodepointBitmapSubpixel(font,
-                                        txt.gbytes,
-                                        g.w,       // out widht
-                                        g.h,       // out height
-                                        g.w,       // out stride
-                                        g.x_scale, // scale x
-                                        g.y_scale, // scale y
-                                        g.x_shift, // shift x
-                                        g.y_shift, // shift y
-                                        g.cp);
+      int error = FT_Load_Char(font, g.cp, FT_LOAD_RENDER);
+      if (error)
+      {
+        printf("FT Load Char error\n");
+      }
 
-      gfx_blend_8(bitmap,
-                  g.x,
-                  g.y,
-                  style.textcolor,
-                  txt.gbytes,
-                  g.w,
-                  g.h);
+      error = FT_Render_Glyph(font->glyph, FT_RENDER_MODE_NORMAL);
+      if (error)
+      {
+        printf("FT_Render_Glyph error\n");
+      }
+
+      FT_Bitmap fontmap = font->glyph->bitmap;
+
+      // printf("blending fontmap width %i height %i mode %i pitch %i\n", fontmap.width, fontmap.rows, fontmap.pixel_mode, fontmap.pitch);
+
+      if (fontmap.pixel_mode == ft_pixel_mode_mono)
+      {
+        // todo avoid conversion somehow
+        FT_Bitmap convmap;
+        FT_Bitmap_New(&convmap);
+
+        FT_Bitmap_Convert(library,
+                          &fontmap,
+                          &convmap,
+                          1);
+
+        // insert to bitmap
+        gfx_blend_8_1(bitmap,
+                      g.x,
+                      g.y,
+                      style.textcolor,
+                      convmap.buffer,
+                      convmap.width,
+                      convmap.rows);
+
+        FT_Bitmap_Done(library, &convmap);
+      }
+      else
+      {
+        // insert to bitmap
+        gfx_blend_8(bitmap,
+                    g.x,
+                    g.y,
+                    style.textcolor,
+                    fontmap.buffer,
+                    fontmap.width,
+                    fontmap.rows);
+      }
     }
   }
 }

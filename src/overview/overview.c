@@ -1,7 +1,7 @@
 #include "config.c"
 #include "fontconfig.c"
 #include "kvlines.c"
-#include "text_ft.c"
+#include "text.c"
 #include "tree_drawer.c"
 #include "tree_reader.c"
 #include "zc_bitmap.c"
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
 
   /* init text rendeing */
 
-  text_ft_init(); // DESTROY 1
+  text_init(); // DESTROY 1
 
   char* font_face = config_get("font_face");
   char* font_path = fontconfig_new_path(font_face ? font_face : ""); // REL 4
@@ -291,8 +291,8 @@ int main(int argc, char* argv[])
 
   /* cleanup */
 
-  config_destroy();  // DESTROY 0
-  text_ft_destroy(); // DESTROY 1
+  config_destroy(); // DESTROY 0
+  text_destroy();   // DESTROY 1
 
   REL(bitmap); // REL 5
 

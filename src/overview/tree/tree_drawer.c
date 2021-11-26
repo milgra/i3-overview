@@ -16,7 +16,7 @@ void tree_drawer_draw(bm_t*  bm,
 #if __INCLUDE_LEVEL__ == 0
 
 #include "config.c"
-#include "text_ft.c"
+#include "text.c"
 #include "tree_reader.c"
 #include "zc_graphics.c"
 
@@ -104,7 +104,7 @@ void tree_drawer_draw(bm_t*  bm,
 
         int grey = 0xFF - rand() % 0x55;
 
-        text_ft_render(str, ts, tbm);
+        text_render(str, ts, tbm);
 
         str_reset(str);
 
@@ -119,7 +119,7 @@ void tree_drawer_draw(bm_t*  bm,
         ts.line_height = 12;
         ts.multiline   = 1;
 
-        text_ft_render(str, ts, tbm);
+        text_render(str, ts, tbm);
 
         /* draw frame */
 
@@ -159,7 +159,7 @@ void tree_drawer_draw(bm_t*  bm,
     snprintf(nums, 4, "%i", wsi + 1);
     str_add_bytearray(str, nums);
 
-    text_ft_render(str, its, tbm);
+    text_render(str, its, tbm);
     gfx_blend_bitmap(bm, tbm, cx + 4, cy - 22);
 
     REL(str); // REL 1
