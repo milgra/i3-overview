@@ -137,7 +137,7 @@ void tree_drawer_draw(bm_t*  bm,
     }
   }
 
-  // draw all workspace numbers
+  /* draw all workspace numbers */
 
   for (int wsi = 0; wsi < max; wsi++)
   {

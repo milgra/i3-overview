@@ -4,7 +4,7 @@
 
 #include "zc_vector.c"
 
-vec_t* json_parse(char* string);
+void json_parse(char* string, vec_t* result);
 
 #endif
 
@@ -39,11 +39,8 @@ char* json_build_path(char* string, jsmntok_t* tokens, char* path, int index)
 
 /* parses c string into an map */
 
-vec_t* json_parse(char* string)
+void json_parse(char* string, vec_t* result)
 {
-  // map_t* result = MNEW( );
-  vec_t* result = VNEW();
-
   jsmn_parser parser;
 
   jsmn_init(&parser);
@@ -103,8 +100,6 @@ vec_t* json_parse(char* string)
   }
 
   REL(tokens);
-
-  return result;
 }
 
 #endif

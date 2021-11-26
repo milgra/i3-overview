@@ -91,7 +91,8 @@ char* i3_get_value(vec_t* vec, int pos, char* path)
 
 void tree_reader_extract(char* ws_json, char* tree_json, vec_t* workspaces)
 {
-  vec_t* json = json_parse(ws_json);
+  vec_t* json = VNEW(); // REL 0
+  json_parse(ws_json, json);
 
   for (int index = 0; index < json->length; index += 2)
   {
@@ -100,7 +101,7 @@ void tree_reader_extract(char* ws_json, char* tree_json, vec_t* workspaces)
 
     if (type_id != NULL)
     {
-      i3_workspace_t* ws = i3_workspace_new();
+      i3_workspace_t* ws = i3_workspace_new(); // REL 1
 
       char* path    = cstr_new_path_remove_last_component(key); // REL 2
       int   pathlen = strlen(path);
@@ -138,13 +139,14 @@ void tree_reader_extract(char* ws_json, char* tree_json, vec_t* workspaces)
       REL(nk);   // REL 8
       REL(fk);   // REL 9
 
-      VADDR(workspaces, ws);
+      VADDR(workspaces, ws); // REL 1
     }
   }
 
-  REL(json);
+  REL(json); // REL 0
+  json = VNEW();
 
-  json = json_parse(tree_json);
+  json_parse(tree_json, json); // REL 0
 
   int curr_wspc_n = 0;
 
@@ -164,8 +166,8 @@ void tree_reader_extract(char* ws_json, char* tree_json, vec_t* workspaces)
         char* n     = i3_get_value(json, index, pathkey);
         curr_wspc_n = atoi(n);
 
-        REL(path);
-        REL(pathkey);
+        REL(path);    // REL 1
+        REL(pathkey); // REL 2
       }
     }
 
@@ -173,18 +175,18 @@ void tree_reader_extract(char* ws_json, char* tree_json, vec_t* workspaces)
 
     if (wind_prt != NULL && curr_wspc_n > -1)
     {
-      i3_window_t* wi = i3_window_new();
+      i3_window_t* wi = i3_window_new(); // REL 3
 
-      char* path    = cstr_new_path_remove_last_component(key); // REL 3
+      char* path    = cstr_new_path_remove_last_component(key); // REL 4
       int   pathlen = strlen(path);
-      char* root    = cstr_new_path_remove_last_component(path); // REL 4
+      char* root    = cstr_new_path_remove_last_component(path); // REL 5
 
-      char* tk = cstr_new_format(pathlen + 20, "%stitle", path);       // REL 5
-      char* ck = cstr_new_format(pathlen + 20, "%sclass", path);       // REL 6
-      char* xk = cstr_new_format(pathlen + 20, "%srect/x", root);      // REL 7
-      char* yk = cstr_new_format(pathlen + 20, "%srect/y", root);      // REL 8
-      char* wk = cstr_new_format(pathlen + 20, "%srect/width", root);  // REL 9
-      char* hk = cstr_new_format(pathlen + 20, "%srect/height", root); // REL 10
+      char* tk = cstr_new_format(pathlen + 20, "%stitle", path);       // REL 6
+      char* ck = cstr_new_format(pathlen + 20, "%sclass", path);       // REL 7
+      char* xk = cstr_new_format(pathlen + 20, "%srect/x", root);      // REL 8
+      char* yk = cstr_new_format(pathlen + 20, "%srect/y", root);      // REL 9
+      char* wk = cstr_new_format(pathlen + 20, "%srect/width", root);  // REL 10
+      char* hk = cstr_new_format(pathlen + 20, "%srect/height", root); // REL 11
 
       char* c = i3_get_value(json, index, ck);
       char* i = json->data[index + 1];
@@ -206,21 +208,22 @@ void tree_reader_extract(char* ws_json, char* tree_json, vec_t* workspaces)
       {
         i3_workspace_t* ws = workspaces->data[wsi];
 
-        if (ws->number == curr_wspc_n) VADDR(ws->windows, wi);
+        if (ws->number == curr_wspc_n) VADD(ws->windows, wi);
       }
 
-      REL(path); // REL 3
-      REL(root); // REL 4
-      REL(tk);   // REL 5
-      REL(ck);   // REL 6
-      REL(xk);   // REL 7
-      REL(yk);   // REL 8
-      REL(wk);   // REL 9
-      REL(hk);   // REL 10
+      REL(wi);   // REL 3
+      REL(path); // REL 4
+      REL(root); // REL 5
+      REL(tk);   // REL 6
+      REL(ck);   // REL 7
+      REL(xk);   // REL 8
+      REL(yk);   // REL 9
+      REL(wk);   // REL 10
+      REL(hk);   // REL 11
     }
   }
 
-  REL(json);
+  REL(json); // REL 0
 }
 
 #endif
