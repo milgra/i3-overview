@@ -20,8 +20,41 @@
 
 #define CFG_PATH_LOC "~/.config/i3-overview/config"
 #define CFG_PATH_GLO "/usr/share/i3-overview/config"
+#define WIN_CLASS "i3-overview"
+#define WIN_TITLE "i3-overview"
+#define KEY_META 133
+#define GET_WORKSPACES_CMD "i3-msg -t get_workspaces"
+#define GET_TREE_CMD "i3-msg -t get_tree"
 
 int alive = 1;
+
+void read_tree(vec_t* workspaces)
+{
+  char buff[100] = {0};
+
+  FILE* pipe = popen(GET_WORKSPACES_CMD, "r"); // CLOSE 0
+
+  char* wstree = cstr_new_cstring("{\"items\":"); // REL 0
+
+  while (fgets(buff, sizeof(buff), pipe) != NULL) wstree = cstr_append(wstree, buff);
+
+  wstree = cstr_append(wstree, "}");
+
+  pclose(pipe); // CLOSE 0
+
+  pipe = popen(GET_TREE_CMD, "r"); // CLOSE 0
+
+  char* tree = cstr_new_cstring(""); // REL 0
+
+  while (fgets(buff, sizeof(buff), pipe) != NULL) tree = cstr_append(tree, buff);
+
+  pclose(pipe); // CLOSE 0
+
+  tree_reader_extract(wstree, tree, workspaces);
+
+  REL(wstree); // REL 1
+  REL(tree);
+}
 
 void sighandler(int signal)
 {
@@ -58,11 +91,11 @@ int main(int argc, char* argv[])
 
   /* init config */
 
-  config_init(); // destroy 1
+  config_init(); // DESTROY 0
 
-  char* wrk_path     = cstr_new_path_normalize(argv[0], NULL);                                                                         // REL 0
-  char* cfg_path_loc = cfg_path ? cstr_new_path_normalize(cfg_path, wrk_path) : cstr_new_path_normalize(CFG_PATH_LOC, getenv("HOME")); // REL 1
-  char* cfg_path_glo = cstr_new_cstring(CFG_PATH_GLO);                                                                                 // REL 2
+  char* wrk_path     = cstr_new_path_normalize(argv[0], NULL);                                                                         // REL 1
+  char* cfg_path_loc = cfg_path ? cstr_new_path_normalize(cfg_path, wrk_path) : cstr_new_path_normalize(CFG_PATH_LOC, getenv("HOME")); // REL 2
+  char* cfg_path_glo = cstr_new_cstring(CFG_PATH_GLO);                                                                                 // REL 3
 
   printf("working path  : %s\n", wrk_path);
   printf("local config path   : %s\n", cfg_path_loc);
@@ -74,57 +107,53 @@ int main(int argc, char* argv[])
       printf("no local or global config file found\n");
   }
 
+  REL(cfg_path_glo); // REL 3
+  REL(cfg_path_loc); // REL 2
+  REL(wrk_path);     // REL 1
+
   /* init text rendeing */
 
-  text_ft_init();
+  text_ft_init(); // DESTROY 1
 
   char* font_face = config_get("font_face");
-  char* font_path = fontconfig_new_path(font_face ? font_face : ""); // REL 3
+  char* font_path = fontconfig_new_path(font_face ? font_face : ""); // REL 4
 
   config_set("font_path", font_path);
 
+  REL(font_path); // REL 4
+
   /* init X11 */
+
+  Display* display = XOpenDisplay(NULL);
 
   int opcode;
   int event;
   int error;
 
-  Display* display = XOpenDisplay(NULL);
+  if (!XQueryExtension(display, "XInputExtension", &opcode, &event, &error)) printf("X Input extension not available.\n");
 
-  if (!XQueryExtension(display, "XInputExtension", &opcode, &event, &error))
-  {
-    printf("X Input extension not available.\n");
-  }
+  /* create overlay window */
 
-  int blackColor = BlackPixel(display, DefaultScreen(display));
-  int whiteColor = WhitePixel(display, DefaultScreen(display));
-
-  // Create the window
-
-  Window view_win = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, 200, 100, 0, whiteColor, blackColor);
+  Window view_win = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, 200, 100, 0, 0xFFFFFF, 0); // DESTROY 2
 
   XClassHint hint;
 
-  hint.res_name  = "i3-overview";
-  hint.res_class = "i3-overview";
+  hint.res_name  = WIN_CLASS;
+  hint.res_class = WIN_CLASS;
 
   XSetClassHint(display, view_win, &hint);
-  XStoreName(display, view_win, "i3-overview");
-
-  // We want to get MapNotify events
+  XStoreName(display, view_win, WIN_TITLE);
 
   XSelectInput(display, view_win, StructureNotifyMask);
 
-  // Get root window
+  /* start listening for global key events */
 
   Window root_win = DefaultRootWindow(display);
-
-  // Get key events
 
   XIEventMask mask;
   mask.deviceid = XIAllDevices;
   mask.mask_len = XIMaskLen(XI_LASTEVENT);
-  mask.mask     = calloc(mask.mask_len, sizeof(char));
+  mask.mask     = calloc(mask.mask_len, sizeof(char)); // FREE 0
 
   XISetMask(mask.mask, XI_KeyPress);
   XISetMask(mask.mask, XI_KeyRelease);
@@ -132,65 +161,34 @@ int main(int argc, char* argv[])
   XISelectEvents(display, root_win, &mask, 1);
   XSync(display, False);
 
-  free(mask.mask);
+  free(mask.mask); // FREE 0
 
   int meta_pressed  = 0;
   int window_mapped = 0;
 
   bm_t* bitmap = NULL;
 
-  // Event loop
-
   while (alive)
   {
     XEvent               ev;
     XGenericEventCookie* cookie = (XGenericEventCookie*)&ev.xcookie;
 
-    XNextEvent(display, (XEvent*)&ev);
+    XNextEvent(display, (XEvent*)&ev); // FREE 1
 
-    if (XGetEventData(display, cookie) &&
-        cookie->type == GenericEvent &&
-        cookie->extension == opcode)
+    if (XGetEventData(display, cookie) && cookie->type == GenericEvent && cookie->extension == opcode)
     {
-
       XIDeviceEvent* event = cookie->data;
-
-      /* printf("    device: %d (%d)\n", event->deviceid, event->sourceid); */
-      /* printf("    detail: %d\n", event->detail); */
 
       switch (event->evtype)
       {
       case XI_KeyPress:
-        if (event->detail == 9) alive = 0;
-        if (event->detail == 133 || meta_pressed)
+        if (event->detail == KEY_META || meta_pressed)
         {
-          if (event->detail == 133) meta_pressed = 1;
-
-          char buff[100] = {0};
-
-          // get i3 workspaces
-
-          FILE* pipe   = popen("i3-msg -t get_workspaces", "r"); // CLOSE 0
-          char* wstree = cstr_new_cstring("{\"items\":");        // REL 0
-
-          while (fgets(buff, sizeof(buff), pipe) != NULL) wstree = cstr_append(wstree, buff);
-
-          wstree = cstr_append(wstree, "}");
-          pclose(pipe); // CLOSE 0
-
-          pipe       = popen("i3-msg -t get_tree", "r"); // CLOSE 0
-          char* tree = cstr_new_cstring("");             // REL 0
-
-          while (fgets(buff, sizeof(buff), pipe) != NULL) tree = cstr_append(tree, buff);
-
-          pclose(pipe); // CLOSE 0
+          if (event->detail == KEY_META) meta_pressed = 1;
 
           vec_t* workspaces = VNEW(); // RET 0
 
-          tree_reader_extract(wstree, tree, workspaces);
-
-          REL(wstree); // REL 1
-          REL(tree);
+          read_tree(workspaces);
 
           i3_workspace_t* ws  = workspaces->data[0];
           i3_workspace_t* wsl = workspaces->data[workspaces->length - 1];
@@ -215,12 +213,6 @@ int main(int argc, char* argv[])
             if (wd1 != lay_wth || ht1 != lay_hth)
             {
               XResizeWindow(display, view_win, lay_wth, lay_hth);
-
-              int snum   = DefaultScreen(display);
-              int width  = DisplayWidth(display, snum);
-              int height = DisplayHeight(display, snum);
-
-              XMoveWindow(display, view_win, width / 2 - lay_wth / 2, height / 2 - lay_hth / 2);
             }
 
             // map window if necessary
@@ -237,6 +229,12 @@ int main(int argc, char* argv[])
                   break;
               }
               window_mapped = 1;
+
+              int snum   = DefaultScreen(display);
+              int width  = DisplayWidth(display, snum);
+              int height = DisplayHeight(display, snum);
+
+              XMoveWindow(display, view_win, width / 2 - lay_wth / 2, height / 2 - lay_hth / 2);
             }
 
             XGetWindowAttributes(display, view_win, &gwa);
@@ -291,22 +289,17 @@ int main(int argc, char* argv[])
       }
     }
 
-    XFreeEventData(display, cookie);
+    XFreeEventData(display, cookie); // FREE 1
   }
 
-  XDestroyWindow(display, root_win);
+  XDestroyWindow(display, view_win); // DESTROY 2
   XSync(display, False);
   XCloseDisplay(display);
 
-  // cleanup
+  /* cleanup */
 
-  REL(wrk_path);     // REL 0
-  REL(cfg_path_loc); // REL 1
-  REL(cfg_path_glo); // REL 2
-  REL(font_path);    // REL 3
-
-  config_destroy(); // destroy 1
-  text_ft_destroy();
+  config_destroy();  // DESTROY 0
+  text_ft_destroy(); // DESTROY 1
 
   if (bitmap) REL(bitmap);
 
