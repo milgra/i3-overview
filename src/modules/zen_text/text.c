@@ -113,7 +113,6 @@ void text_measure(str_t* text, textstyle_t style, int w, int h, int* nw, int* nh
 #include "zc_graphics.c"
 #include "zc_map.c"
 #include "zc_wrapper.c"
-#include "zm_math2.c"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
