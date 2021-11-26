@@ -25,35 +25,32 @@
 #define KEY_META 133
 #define GET_WORKSPACES_CMD "i3-msg -t get_workspaces"
 #define GET_TREE_CMD "i3-msg -t get_tree"
+#define GAP 25
+#define COLS 5
 
 int alive = 1;
 
 void read_tree(vec_t* workspaces)
 {
-  char buff[100] = {0};
+  char  buff[100] = {0};
+  char* ws_json   = NULL; // REL 0
+  char* tree_json = NULL; // REL 1
 
   FILE* pipe = popen(GET_WORKSPACES_CMD, "r"); // CLOSE 0
-
-  char* wstree = cstr_new_cstring("{\"items\":"); // REL 0
-
-  while (fgets(buff, sizeof(buff), pipe) != NULL) wstree = cstr_append(wstree, buff);
-
-  wstree = cstr_append(wstree, "}");
-
+  ws_json    = cstr_new_cstring("{\"items\":");
+  while (fgets(buff, sizeof(buff), pipe) != NULL) ws_json = cstr_append(ws_json, buff);
+  ws_json = cstr_append(ws_json, "}");
   pclose(pipe); // CLOSE 0
 
-  pipe = popen(GET_TREE_CMD, "r"); // CLOSE 0
-
-  char* tree = cstr_new_cstring(""); // REL 0
-
-  while (fgets(buff, sizeof(buff), pipe) != NULL) tree = cstr_append(tree, buff);
-
+  pipe      = popen(GET_TREE_CMD, "r"); // CLOSE 0
+  tree_json = cstr_new_cstring("");
+  while (fgets(buff, sizeof(buff), pipe) != NULL) tree_json = cstr_append(tree_json, buff);
   pclose(pipe); // CLOSE 0
 
-  tree_reader_extract(wstree, tree, workspaces);
+  tree_reader_extract(ws_json, tree_json, workspaces);
 
-  REL(wstree); // REL 1
-  REL(tree);
+  REL(ws_json);   // REL 0
+  REL(tree_json); // REL 1
 }
 
 void sighandler(int signal)
@@ -166,7 +163,7 @@ int main(int argc, char* argv[])
   int meta_pressed  = 0;
   int window_mapped = 0;
 
-  bm_t* bitmap = NULL;
+  bm_t* bitmap = bm_new(1, 1); // REL 5
 
   while (alive)
   {
@@ -179,14 +176,13 @@ int main(int argc, char* argv[])
     {
       XIDeviceEvent* event = cookie->data;
 
-      switch (event->evtype)
+      if (event->evtype == XI_KeyPress)
       {
-      case XI_KeyPress:
         if (event->detail == KEY_META || meta_pressed)
         {
           if (event->detail == KEY_META) meta_pressed = 1;
 
-          vec_t* workspaces = VNEW(); // RET 0
+          vec_t* workspaces = VNEW(); // REL 6
 
           read_tree(workspaces);
 
@@ -195,97 +191,94 @@ int main(int argc, char* argv[])
 
           if (ws->width > 0 && ws->height > 0)
           {
-            int gap  = 25;
-            int cols = 5;
+            int gap  = GAP;
+            int cols = COLS;
             int rows = (int)ceilf((float)wsl->number / 5.0);
 
             int lay_wth = cols * (ws->width / 8) + (cols + 1) * gap;
             int lay_hth = rows * (ws->height / 8) + (rows + 1) * gap;
 
-            // resize window if necessary
+            XWindowAttributes win_attr;
+            XGetWindowAttributes(display, view_win, &win_attr);
 
-            XWindowAttributes gwa;
-            XGetWindowAttributes(display, view_win, &gwa);
+            int win_wth = win_attr.width;
+            int win_hth = win_attr.height;
 
-            int wd1 = gwa.width;
-            int ht1 = gwa.height;
+            int screen  = DefaultScreen(display);
+            int scr_wth = DisplayWidth(display, screen);
+            int scr_hth = DisplayHeight(display, screen);
 
-            if (wd1 != lay_wth || ht1 != lay_hth)
+            /* resize if needed */
+
+            if (win_wth != lay_wth || win_hth != lay_hth)
             {
               XResizeWindow(display, view_win, lay_wth, lay_hth);
+              XMoveWindow(display, view_win, scr_wth / 2 - lay_wth / 2, scr_hth / 2 - lay_hth / 2);
             }
-
-            // map window if necessary
+            /* map if necessary */
 
             if (!window_mapped)
             {
-              XMapWindow(display, view_win);
-
-              for (;;)
-              {
-                XEvent e;
-                XNextEvent(display, &e);
-                if (e.type == MapNotify)
-                  break;
-              }
               window_mapped = 1;
-
-              int snum   = DefaultScreen(display);
-              int width  = DisplayWidth(display, snum);
-              int height = DisplayHeight(display, snum);
-
-              XMoveWindow(display, view_win, width / 2 - lay_wth / 2, height / 2 - lay_hth / 2);
+              XMapWindow(display, view_win);
+              XMoveWindow(display, view_win, scr_wth / 2 - lay_wth / 2, scr_hth / 2 - lay_hth / 2);
             }
 
-            XGetWindowAttributes(display, view_win, &gwa);
+            /* flush move, resize and map commands */
 
-            wd1 = gwa.width;
-            ht1 = gwa.height;
+            XSync(display, False);
 
-            // create texture bitmap
+            /* create overlay bitmap */
 
-            if (bitmap == NULL || bitmap->w != lay_wth || bitmap->h != lay_hth)
+            if (bitmap->w != lay_wth || bitmap->h != lay_hth)
             {
-              if (bitmap != NULL) REL(bitmap);
-              bitmap = bm_new(lay_wth, lay_hth); // REL 0
+              REL(bitmap);
+              bitmap = bm_new(lay_wth, lay_hth); // REL 5
             }
 
             tree_drawer_draw(bitmap, workspaces);
 
-            XImage* image = XGetImage(display, view_win, 0, 0, lay_wth, lay_hth, AllPlanes, ZPixmap);
+            XImage* image = XGetImage(display, view_win, 0, 0, lay_wth, lay_hth, AllPlanes, ZPixmap); // DESTROY 3
+
+            uint8_t* data = bitmap->data;
 
             for (int y = 0; y < lay_hth; y++)
             {
               for (int x = 0; x < lay_wth; x++)
               {
-                int      index = y * lay_wth * 4 + x * 4;
-                uint8_t  r     = bitmap->data[index];
-                uint8_t  g     = bitmap->data[index + 1];
-                uint8_t  b     = bitmap->data[index + 2];
+                uint8_t  r     = data[0];
+                uint8_t  g     = data[1];
+                uint8_t  b     = data[2];
                 uint32_t pixel = (r << 16) | (g << 8) | b;
+
                 XPutPixel(image, x, y, pixel);
+
+                data += 4;
               }
             }
 
-            GC gc = XCreateGC(display, view_win, 0, NULL);
+            GC gc = XCreateGC(display, view_win, 0, NULL); // FREE 0
             XPutImage(display, view_win, gc, image, 0, 0, 0, 0, lay_wth, lay_hth);
-            XFreeGC(display, gc);
 
-            XDestroyImage(image);
+            /* cleanup */
+
+            XFreeGC(display, gc); // FREE 0
+            XDestroyImage(image); // DESTROY 3
           }
 
-          REL(workspaces);
+          REL(workspaces); // REL 6
         }
-        break;
-      case XI_KeyRelease:
-        if (event->detail == 133)
+      }
+      else if (event->evtype == XI_KeyRelease)
+      {
+        if (event->detail == KEY_META)
         {
           XUnmapWindow(display, view_win);
+          XSync(display, False);
 
           meta_pressed  = 0;
           window_mapped = 0;
         }
-        break;
       }
     }
 
@@ -301,7 +294,7 @@ int main(int argc, char* argv[])
   config_destroy();  // DESTROY 0
   text_ft_destroy(); // DESTROY 1
 
-  if (bitmap) REL(bitmap);
+  REL(bitmap); // REL 5
 
   if (cfg_path) REL(cfg_path); // REL 0
 
