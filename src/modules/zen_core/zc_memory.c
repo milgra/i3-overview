@@ -282,7 +282,7 @@ void mem_stat(void* pointer)
 
 void mem_stats()
 {
-  printf("***MEM STATS***");
+  printf("\n***MEM STATS***\n");
 
   // print block statistics
 

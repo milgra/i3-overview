@@ -1,9 +1,9 @@
-#include "analyzer.c"
 #include "config.c"
 #include "fontconfig.c"
 #include "kvlines.c"
-#include "renderer.c"
 #include "text_ft.c"
+#include "tree_drawer.c"
+#include "tree_reader.c"
 #include "zc_bitmap.c"
 #include "zc_cstring.c"
 #include "zc_cstrpath.c"
@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
 
             vec_t* workspaces = VNEW(); // RET 0
 
-            analyzer_extract(wstree, tree, workspaces);
+            tree_reader_extract(wstree, tree, workspaces);
 
             REL(wstree); // REL 1
             REL(tree);
@@ -269,7 +269,7 @@ int main(int argc, char* argv[])
                 bitmap = bm_new(lay_wth, lay_hth); // REL 0
               }
 
-              renderer_draw(bitmap, workspaces);
+              tree_drawer_draw(bitmap, workspaces);
 
               XImage* image = XGetImage(display, view_win, 0, 0, lay_wth, lay_hth, AllPlanes, ZPixmap);
 
@@ -333,7 +333,7 @@ int main(int argc, char* argv[])
     char*  tree_json  = cstr_new_file(zm.tree_json_par);
     vec_t* workspaces = VNEW(); // RET 0
 
-    analyzer_extract(ws_json, tree_json, workspaces);
+    tree_reader_extract(ws_json, tree_json, workspaces);
 
     // get needed bitmap size
 
@@ -357,7 +357,7 @@ int main(int argc, char* argv[])
         bitmap = bm_new(lay_wth, lay_hth); // REL 0
       }
 
-      renderer_draw(bitmap, workspaces);
+      tree_drawer_draw(bitmap, workspaces);
 
       // save gitmap to output file
 

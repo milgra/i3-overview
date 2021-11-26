@@ -1,10 +1,10 @@
-#ifndef renderer_h
-#define renderer_h
+#ifndef tree_drawer_h
+#define tree_drawer_h
 
 #include "zc_bitmap.c"
 #include "zc_vector.c"
 
-void renderer_draw(bm_t* bm, vec_t* workspaces);
+void tree_drawer_draw(bm_t* bm, vec_t* workspaces);
 
 #endif
 
@@ -16,7 +16,7 @@ void renderer_draw(bm_t* bm, vec_t* workspaces);
 #include "tree_reader.c"
 #include "zc_graphics.c"
 
-void renderer_draw(bm_t* bm, vec_t* workspaces)
+void tree_drawer_draw(bm_t* bm, vec_t* workspaces)
 {
   gfx_rect(bm, 0, 0, bm->w, bm->h, 0x000000FF, 0);
 

@@ -2,6 +2,7 @@ UNAME := $(shell uname -s)
 CC = clang
 OBJDIRDEV = bin/obj/dev
 OBJDIRREL = bin/obj/rel
+OBJDIRTEST = bin/obj/test
 VERSION = 1
 
 SOURCES = \
@@ -12,8 +13,13 @@ SOURCES = \
 	$(wildcard src/modules/json/*.c) \
 	$(wildcard src/modules/storage/*.c) \
 	$(wildcard src/overview/config/*.c) \
-	$(wildcard src/overview/tree/*.c) \
+	$(wildcard src/overview/tree/*.c)
+
+SOURCES_MAIN = $(SOURCES) \
 	src/overview/overview.c
+
+SOURCES_TEST = $(SOURCES) \
+	src/overview/overview_test.c
 
 CFLAGS = \
 	-Isrc/ \
@@ -29,18 +35,23 @@ CFLAGS = \
 	-Isrc/overview/tree
 
 LDFLAGS = \
+	-lm \
 	-lX11 \
 	-lXi \
 	-lfreetype
 
-OBJECTSDEV := $(addprefix $(OBJDIRDEV)/,$(SOURCES:.c=.o))
-OBJECTSREL := $(addprefix $(OBJDIRREL)/,$(SOURCES:.c=.o))
+OBJECTSDEV := $(addprefix $(OBJDIRDEV)/,$(SOURCES_MAIN:.c=.o))
+OBJECTSREL := $(addprefix $(OBJDIRREL)/,$(SOURCES_MAIN:.c=.o))
+OBJECTSTEST := $(addprefix $(OBJDIRTEST)/,$(SOURCES_TEST:.c=.o))
 
 dev: $(OBJECTSDEV)
 	$(CC) $^ -o bin/i3-overviewdev $(LDFLAGS) -fsanitize=address
 
 rel: $(OBJECTSREL)
 	$(CC) $^ -o bin/i3-overview $(LDFLAGS)
+
+test: $(OBJECTSTEST)
+	$(CC) $^ -o bin/i3-overview-test $(LDFLAGS) -fsanitize=address
 
 $(OBJECTSDEV): $(OBJDIRDEV)/%.o: %.c
 	mkdir -p $(@D)
@@ -50,9 +61,14 @@ $(OBJECTSREL): $(OBJDIRREL)/%.o: %.c
 	mkdir -p $(@D)
 	$(CC) -c $< -o $@ $(CFLAGS) -O3 -DVERSION=$(VERSION) -DBUILD=$(shell cat version.num)
 
+$(OBJECTSTEST): $(OBJDIRTEST)/%.o: %.c
+	mkdir -p $(@D)
+	$(CC) -c $< -o $@ $(CFLAGS) -g -DDEBUG -DVERSION=0 -DBUILD=0 -fsanitize=address
+
 clean:
 	rm -f $(OBJECTSDEV) i3-overview
 	rm -f $(OBJECTSREL) i3-overview
+	rm -f $(OBJECTSTEST) i3-overview
 
 vjump: 
 	$(shell ./version.sh "$$(cat version.num)" > version.num)

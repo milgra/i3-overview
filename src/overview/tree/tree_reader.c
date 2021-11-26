@@ -1,5 +1,5 @@
-#ifndef analyzer_h
-#define analyzer_h
+#ifndef tree_reader_h
+#define tree_reader_h
 
 #include "zc_vector.c"
 
@@ -25,7 +25,7 @@ typedef struct _i3_workspace_t
   vec_t* windows;
 } i3_workspace_t;
 
-void analyzer_extract(char* ws_json, char* tree_json, vec_t* workspaces);
+void tree_reader_extract(char* ws_json, char* tree_json, vec_t* workspaces);
 
 #endif
 
@@ -89,7 +89,7 @@ char* i3_get_value(vec_t* vec, int pos, char* path)
   return NULL;
 }
 
-void analyzer_extract(char* ws_json, char* tree_json, vec_t* workspaces)
+void tree_reader_extract(char* ws_json, char* tree_json, vec_t* workspaces)
 {
   vec_t* json = json_parse(ws_json);
 
