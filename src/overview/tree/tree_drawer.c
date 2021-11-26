@@ -10,10 +10,10 @@ void renderer_draw(bm_t* bm, vec_t* workspaces);
 
 #if __INCLUDE_LEVEL__ == 0
 
-#include "analyzer.c"
 #include "config.c"
 #include "text.c"
 #include "text_ft.c"
+#include "tree_reader.c"
 #include "zc_graphics.c"
 
 void renderer_draw(bm_t* bm, vec_t* workspaces)

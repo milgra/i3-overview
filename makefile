@@ -11,23 +11,24 @@ SOURCES = \
 	$(wildcard src/modules/zen_text/*.c) \
 	$(wildcard src/modules/json/*.c) \
 	$(wildcard src/modules/storage/*.c) \
-	$(wildcard src/overview/*.c)
+	$(wildcard src/overview/config/*.c) \
+	$(wildcard src/overview/tree/*.c) \
+	src/overview/overview.c
 
 CFLAGS = \
 	-Isrc/ \
 	-I/usr/include \
 	-I/usr/include/X11 \
 	-I/usr/include/freetype2 \
-	-pthread \
 	-Isrc/modules/zen_core \
 	-Isrc/modules/zen_math \
 	-Isrc/modules/zen_text \
 	-Isrc/modules/json \
-	-Isrc/modules/storage
+	-Isrc/modules/storage \
+	-Isrc/overview/config \
+	-Isrc/overview/tree
 
 LDFLAGS = \
-	-lm \
-	-lpthread \
 	-lX11 \
 	-lXi \
 	-lfreetype
