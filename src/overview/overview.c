@@ -236,13 +236,50 @@ int main(int argc, char* argv[])
               bitmap = bm_new(lay_wth, lay_hth); // REL 5
             }
 
+            textstyle_t main_style = {
+                .font       = font_path,
+                .margin     = 5,
+                .margin_top = -7,
+                .align      = TA_LEFT,
+                .valign     = VA_TOP,
+                .size       = 14.0,
+                .textcolor  = 0xFFFFFFFF,
+                .backcolor  = 0,
+                .multiline  = 0,
+            };
+
+            textstyle_t sub_style = {
+                .font        = font_path,
+                .margin      = 5,
+                .margin_top  = 10,
+                .align       = TA_LEFT,
+                .valign      = VA_TOP,
+                .size        = 12.0,
+                .textcolor   = 0xAADDFFFF,
+                .backcolor   = 0,
+                .line_height = 12,
+                .multiline   = 1,
+            };
+
+            textstyle_t wsnum_style = {
+                .font      = font_path,
+                .align     = TA_RIGHT,
+                .valign    = VA_TOP,
+                .size      = 20.0,
+                .textcolor = 0xFFFFFFFF,
+                .backcolor = 0x00002200,
+            };
+
             tree_drawer_draw(bitmap,
                              workspaces,
                              GAP,
                              COLS,
                              8.0,
-                             config_get("font_path"),
-                             0xFFFFFFFF,
+                             main_style,
+                             sub_style,
+                             wsnum_style,
+                             0x000022FF,
+                             0x222255FF,
                              0xAADDFFFF);
 
             XImage* image = XGetImage(display, view_win, 0, 0, lay_wth, lay_hth, AllPlanes, ZPixmap); // DESTROY 3
