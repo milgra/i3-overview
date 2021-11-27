@@ -66,6 +66,7 @@ int config_get_int(char* key)
 void config_describe()
 {
   mem_describe(confmap, 0);
+  printf("\n");
 }
 
 #endif

@@ -24,10 +24,8 @@
 #define CFG_PATH_GLO "/usr/share/i3-overview/config"
 #define WIN_CLASS "i3-overview"
 #define WIN_TITLE "i3-overview"
-#define KEY_META 133
 #define GET_WORKSPACES_CMD "i3-msg -t get_workspaces"
 #define GET_TREE_CMD "i3-msg -t get_tree"
-#define COLS 5
 
 int alive = 1;
 
@@ -81,7 +79,6 @@ int main(int argc, char* argv[])
 
   while ((option = getopt_long(argc, argv, "c:", long_options, &option_index)) != -1)
   {
-    if (option != '?') printf("parsing option %c value: %s\n", option, optarg);
     if (option == 'c') cfg_path = cstr_new_cstring(optarg); // REL 0
     if (option == '?') printf("-c --config= [path] \t use config file for session\n");
   }
@@ -96,18 +93,15 @@ int main(int argc, char* argv[])
   char* cfg_path_loc = cfg_path ? cstr_new_path_normalize(cfg_path, cwd) : cstr_new_path_normalize(CFG_PATH_LOC, getenv("HOME")); // REL 2
   char* cfg_path_glo = cstr_new_cstring(CFG_PATH_GLO);                                                                            // REL 3
 
-  printf("local config path   : %s\n", cfg_path_loc);
-  printf("global config path   : %s\n", cfg_path_glo);
-
   if (config_read(cfg_path_loc) < 0)
   {
     if (config_read(cfg_path_glo) < 0)
-      printf("no local or global config file found\n");
+      printf("No local or global config file found\n");
     else
-      printf("using global config\n");
+      printf("Using config file : %s\n", cfg_path_glo);
   }
   else
-    printf("using local config\n");
+    printf("Using config file : %s\n", cfg_path_loc);
 
   REL(cfg_path_glo); // REL 3
   REL(cfg_path_loc); // REL 2
@@ -120,10 +114,6 @@ int main(int argc, char* argv[])
 
   char* font_face = config_get("font_face");
   char* font_path = fontconfig_new_path(font_face ? font_face : ""); // REL 4
-
-  config_set("font_path", font_path);
-
-  REL(font_path); // REL 4
 
   /* init X11 */
 
@@ -166,6 +156,7 @@ int main(int argc, char* argv[])
 
   free(mask.mask); // FREE 0
 
+  int meta_code     = config_get_int("meta_code");
   int meta_pressed  = 0;
   int window_mapped = 0;
 
@@ -184,9 +175,9 @@ int main(int argc, char* argv[])
 
       if (event->evtype == XI_KeyPress)
       {
-        if (event->detail == KEY_META || meta_pressed)
+        if (event->detail == meta_code || meta_pressed)
         {
-          if (event->detail == KEY_META) meta_pressed = 1;
+          if (event->detail == meta_code) meta_pressed = 1;
 
           vec_t* workspaces = VNEW(); // REL 6
 
@@ -197,12 +188,13 @@ int main(int argc, char* argv[])
 
           if (ws->width > 0 && ws->height > 0)
           {
-            int gap  = config_get_int("gap");
-            int cols = COLS;
-            int rows = (int)ceilf((float)wsl->number / COLS);
+            int gap   = config_get_int("gap");
+            int cols  = config_get_int("columns");
+            int rows  = (int)ceilf((float)wsl->number / cols);
+            int ratio = config_get_int("ratio");
 
-            int lay_wth = cols * (ws->width / 8) + (cols + 1) * gap;
-            int lay_hth = rows * (ws->height / 8) + (rows + 1) * gap;
+            int lay_wth = cols * (ws->width / ratio) + (cols + 1) * gap;
+            int lay_hth = rows * (ws->height / ratio) + (rows + 1) * gap;
 
             XWindowAttributes win_attr;
             XGetWindowAttributes(display, view_win, &win_attr);
@@ -248,8 +240,8 @@ int main(int argc, char* argv[])
                 .margin_top = -7,
                 .align      = TA_LEFT,
                 .valign     = VA_TOP,
-                .size       = 14.0,
-                .textcolor  = 0xFFFFFFFF,
+                .size       = config_get_int("text_title_size"),
+                .textcolor  = cstr_color_from_cstring(config_get("text_title_color")),
                 .backcolor  = 0,
                 .multiline  = 0,
             };
@@ -260,8 +252,8 @@ int main(int argc, char* argv[])
                 .margin_top  = 10,
                 .align       = TA_LEFT,
                 .valign      = VA_TOP,
-                .size        = 12.0,
-                .textcolor   = 0xAADDFFFF,
+                .size        = config_get_int("text_description_size"),
+                .textcolor   = cstr_color_from_cstring(config_get("text_description_color")),
                 .backcolor   = 0,
                 .line_height = 12,
                 .multiline   = 1,
@@ -271,22 +263,22 @@ int main(int argc, char* argv[])
                 .font      = font_path,
                 .align     = TA_RIGHT,
                 .valign    = VA_TOP,
-                .size      = 20.0,
-                .textcolor = 0xFFFFFFFF,
+                .size      = config_get_int("text_workspace_size"),
+                .textcolor = cstr_color_from_cstring(config_get("text_workspace_color")),
                 .backcolor = 0x00002200,
             };
 
             tree_drawer_draw(bitmap,
                              workspaces,
                              gap,
-                             COLS,
-                             8.0,
+                             cols,
+                             ratio,
                              main_style,
                              sub_style,
                              wsnum_style,
-                             0x000022FF,
-                             0x222255FF,
-                             0xAADDFFFF);
+                             cstr_color_from_cstring(config_get("background_color")),
+                             cstr_color_from_cstring(config_get("background_color_focused")),
+                             cstr_color_from_cstring(config_get("border_color")));
 
             XImage* image = XGetImage(display, view_win, 0, 0, lay_wth, lay_hth, AllPlanes, ZPixmap); // DESTROY 3
 
@@ -321,7 +313,7 @@ int main(int argc, char* argv[])
       }
       else if (event->evtype == XI_KeyRelease)
       {
-        if (event->detail == KEY_META)
+        if (event->detail == meta_code)
         {
           XUnmapWindow(display, view_win);
           XSync(display, False);
@@ -344,7 +336,8 @@ int main(int argc, char* argv[])
   config_destroy(); // DESTROY 0
   text_destroy();   // DESTROY 1
 
-  REL(bitmap); // REL 5
+  REL(font_path); // REL 4
+  REL(bitmap);    // REL 5
 
   if (cfg_path) REL(cfg_path); // REL 0
 
