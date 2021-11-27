@@ -5,6 +5,7 @@
 
 void  config_init();
 void  config_destroy();
+void  config_describe();
 int   config_read(char* path);
 void  config_set(char* key, char* value);
 char* config_get(char* key);
@@ -60,6 +61,11 @@ int config_get_int(char* key)
     return atoi(val);
   else
     return 0;
+}
+
+void config_describe()
+{
+  mem_describe(confmap, 0);
 }
 
 #endif

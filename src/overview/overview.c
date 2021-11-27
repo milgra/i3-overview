@@ -12,11 +12,13 @@
 #include <X11/extensions/XInput.h>
 #include <X11/extensions/XInput2.h>
 #include <getopt.h>
+#include <limits.h>
 #include <math.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 #define CFG_PATH_LOC "~/.config/i3-overview/config"
 #define CFG_PATH_GLO "/usr/share/i3-overview/config"
@@ -25,7 +27,6 @@
 #define KEY_META 133
 #define GET_WORKSPACES_CMD "i3-msg -t get_workspaces"
 #define GET_TREE_CMD "i3-msg -t get_tree"
-#define GAP 25
 #define COLS 5
 
 int alive = 1;
@@ -70,16 +71,15 @@ int main(int argc, char* argv[])
 
   char* cfg_path = NULL;
 
-  const struct option long_options[] =
-      {
-          {"config", optional_argument, 0, 'c'},
-          {0, 0, 0, 0},
-      };
+  const struct option long_options[] = {
+      {"config", optional_argument, 0, 'c'},
+      {0, 0, 0, 0},
+  };
 
   int option       = 0;
   int option_index = 0;
 
-  while ((option = getopt_long(argc, argv, "c", long_options, &option_index)) != -1)
+  while ((option = getopt_long(argc, argv, "c:", long_options, &option_index)) != -1)
   {
     if (option != '?') printf("parsing option %c value: %s\n", option, optarg);
     if (option == 'c') cfg_path = cstr_new_cstring(optarg); // REL 0
@@ -90,11 +90,12 @@ int main(int argc, char* argv[])
 
   config_init(); // DESTROY 0
 
-  char* wrk_path     = cstr_new_path_normalize(argv[0], NULL);                                                                         // REL 1
-  char* cfg_path_loc = cfg_path ? cstr_new_path_normalize(cfg_path, wrk_path) : cstr_new_path_normalize(CFG_PATH_LOC, getenv("HOME")); // REL 2
-  char* cfg_path_glo = cstr_new_cstring(CFG_PATH_GLO);                                                                                 // REL 3
+  char cwd[PATH_MAX];
+  if (getcwd(cwd, sizeof(cwd)) == NULL) printf("Cannot get working directory\n");
 
-  printf("working path  : %s\n", wrk_path);
+  char* cfg_path_loc = cfg_path ? cstr_new_path_normalize(cfg_path, cwd) : cstr_new_path_normalize(CFG_PATH_LOC, getenv("HOME")); // REL 2
+  char* cfg_path_glo = cstr_new_cstring(CFG_PATH_GLO);                                                                            // REL 3
+
   printf("local config path   : %s\n", cfg_path_loc);
   printf("global config path   : %s\n", cfg_path_glo);
 
@@ -102,11 +103,16 @@ int main(int argc, char* argv[])
   {
     if (config_read(cfg_path_glo) < 0)
       printf("no local or global config file found\n");
+    else
+      printf("using global config\n");
   }
+  else
+    printf("using local config\n");
 
   REL(cfg_path_glo); // REL 3
   REL(cfg_path_loc); // REL 2
-  REL(wrk_path);     // REL 1
+
+  config_describe();
 
   /* init text rendeing */
 
@@ -191,7 +197,7 @@ int main(int argc, char* argv[])
 
           if (ws->width > 0 && ws->height > 0)
           {
-            int gap  = GAP;
+            int gap  = config_get_int("gap");
             int cols = COLS;
             int rows = (int)ceilf((float)wsl->number / COLS);
 
@@ -272,7 +278,7 @@ int main(int argc, char* argv[])
 
             tree_drawer_draw(bitmap,
                              workspaces,
-                             GAP,
+                             gap,
                              COLS,
                              8.0,
                              main_style,
