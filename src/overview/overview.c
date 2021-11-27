@@ -68,19 +68,22 @@ int main(int argc, char* argv[])
   /* parse parameters */
 
   char* cfg_path = NULL;
+  char  verbose  = 0;
 
   const struct option long_options[] = {
-      {"config", optional_argument, 0, 'c'},
+      {"config", required_argument, 0, 'c'},
+      {"verbose", no_argument, 0, 'v'},
       {0, 0, 0, 0},
   };
 
   int option       = 0;
   int option_index = 0;
 
-  while ((option = getopt_long(argc, argv, "c:", long_options, &option_index)) != -1)
+  while ((option = getopt_long(argc, argv, "c:v", long_options, &option_index)) != -1)
   {
     if (option == 'c') cfg_path = cstr_new_cstring(optarg); // REL 0
-    if (option == '?') printf("-c --config= [path] \t use config file for session\n");
+    if (option == 'v') verbose = 1;
+    if (option == '?') printf("-c --config= [path] \t use config file for session\n-v --verbose \t\t verbose standard output\n");
   }
 
   /* init config */
@@ -97,16 +100,16 @@ int main(int argc, char* argv[])
   {
     if (config_read(cfg_path_glo) < 0)
       printf("No local or global config file found\n");
-    else
+    else if (verbose)
       printf("Using config file : %s\n", cfg_path_glo);
   }
-  else
+  else if (verbose)
     printf("Using config file : %s\n", cfg_path_loc);
 
   REL(cfg_path_glo); // REL 3
   REL(cfg_path_loc); // REL 2
 
-  config_describe();
+  if (verbose) config_describe();
 
   /* init text rendeing */
 

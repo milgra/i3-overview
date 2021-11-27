@@ -186,18 +186,15 @@ void text_font_load(char* path)
       MPUTR(txt_ft.libs, path, libwrp);
       MPUTR(txt_ft.fonts, path, facewrp);
 
-      if (error != 0)
-      {
-        printf("FT Set Char Size error\n");
-      }
+      if (error != 0) printf("FT Set Char Size error\n");
 
-      printf("Font loaded %s txt_ft.fonts in file %li\n", path, face->num_faces);
+      // printf("Font loaded %s txt_ft.fonts in file %li\n", path, face->num_faces);
     }
     else
     {
       if (error == FT_Err_Unknown_File_Format)
       {
-        printf("Unknown font file format\n");
+        printf("FT Unknown font file format\n");
       }
       else if (error)
       {
