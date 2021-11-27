@@ -20,6 +20,7 @@ bm_t* bm_new_clone(bm_t* bm);
 bm_t* bm_new_flip_y(bm_t* bm);
 void  bm_reset(bm_t* bm);
 void  bm_describe(void* p, int level);
+void  bm_write(bm_t* bm, char* path);
 
 #endif
 
@@ -97,26 +98,28 @@ void bm_write(bm_t* bm, char* path)
   img = (unsigned char*)malloc(3 * w * h);
   memset(img, 0, 3 * w * h);
 
-  /* for (int i = 0; i < w; i++) */
-  /* { */
-  /*   for (int j = 0; j < h; j++) */
-  /*   { */
-  /*     int x = i; */
-  /*     int y = (h - 1) - j; */
+  for (int i = 0; i < w; i++)
+  {
+    for (int j = 0; j < h; j++)
+    {
+      int index = j * w * 4 + i * 4;
 
-  /*     int r = red[i][j] * 255; */
-  /*     int g = green[i][j] * 255; */
-  /*     int b = blue[i][j] * 255; */
+      int x = i;
+      int y = j;
 
-  /*     if (r > 255) r = 255; */
-  /*     if (g > 255) g = 255; */
-  /*     if (b > 255) b = 255; */
+      int r = bm->data[index];
+      int g = bm->data[index + 1];
+      int b = bm->data[index + 2];
 
-  /*     img[(x + y * w) * 3 + 2] = (unsigned char)(r); */
-  /*     img[(x + y * w) * 3 + 1] = (unsigned char)(g); */
-  /*     img[(x + y * w) * 3 + 0] = (unsigned char)(b); */
-  /*   } */
-  /* } */
+      if (r > 255) r = 255;
+      if (g > 255) g = 255;
+      if (b > 255) b = 255;
+
+      img[(x + y * w) * 3 + 2] = (unsigned char)(r);
+      img[(x + y * w) * 3 + 1] = (unsigned char)(g);
+      img[(x + y * w) * 3 + 0] = (unsigned char)(b);
+    }
+  }
 
   unsigned char bmpfileheader[14] = {'B', 'M', 0, 0, 0, 0, 0, 0, 0, 0, 54, 0, 0, 0};
   unsigned char bmpinfoheader[40] = {40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 24, 0};
@@ -136,7 +139,7 @@ void bm_write(bm_t* bm, char* path)
   bmpinfoheader[10] = (unsigned char)(h >> 16);
   bmpinfoheader[11] = (unsigned char)(h >> 24);
 
-  f = fopen("img.bmp", "wb");
+  f = fopen(path, "wb");
   fwrite(bmpfileheader, 1, 14, f);
   fwrite(bmpinfoheader, 1, 40, f);
   for (int i = 0; i < h; i++)

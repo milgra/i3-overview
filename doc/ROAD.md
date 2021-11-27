@@ -2,8 +2,6 @@
 
 **near future**
 
-- verbose!!!
+- gap 5 drawer freeze
+- non-bitmap font text rendering fucks up
 - cstr szetszedese
-- handle key combos
-- make colors configurable also
-- create renderer test with different gaps, colors, fonts, etc

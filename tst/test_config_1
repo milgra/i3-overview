@@ -1,25 +1,42 @@
+# activator key code
+# get wanted key code with 'xinput test-xi2 --root' the wanted number is the 'detail' field  
+meta_code 133
+
 # distance between workspaces
-gap 5
+gap 25
 
-# color of lines and text
-foreground_color #224466FF
+# columns
+columns 5
 
-# default background color
-background_color_passive #000022FF
-
-# active background color
-background_color_active #222266FF
+# thumbnail to workspace ratio
+ratio 8
 
 # font face, use any string that is output by fc-list
 font_face Terminus (TTF):style=Bold
 
-# size of font
-font_size 12
+# title text size
+text_title_size 14
 
-# font index in font file, leave it 0 if you are unsure
-font_index 0
+# title text color
+text_title_color #FFFFFFFF
 
-# millisecs to wait before showing up the overview
-# useful when you don't want to see it at every workspace switch
-# just when you are unsure and leave the meta key pressed
-show_delay 0
+# description text size
+text_description_size 12
+
+# description text color
+text_description_color #AADDFFFF
+
+# workspace number text size
+text_workspace_size 20
+
+# workspace number text color
+text_workspace_color #FFFFFFFF
+
+# border color
+border_color #AADDFF6FF
+
+# background color
+background_color #000022FF
+
+# focused background color
+background_color_focused #222266FF
