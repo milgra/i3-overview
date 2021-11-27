@@ -8,11 +8,8 @@ i3-overview is an application that shows thumbnails of all workspaces to make na
 
 Make sure you have the following libraries installed :
 
-- OpenGL
-- GLEW
 - X11
 - Xi
-- SDL2
 - freetype
 
 Then download and build it :
@@ -29,6 +26,13 @@ Then you have to set it as floating in i3 config, set it as sticky to keep it on
 for_window [class="i3-overview"] floating enable
 for_window [class="i3-overview"] sticky enable
 no_focus [class="i3-overview"]
+```
+
+Make it transparent in your compositor, for example, picom
+```
+opacity-rule = [ 
+"90:class_g *?= 'I3-overview'"
+];
 ```
 
 You can start it/test it immediately with :

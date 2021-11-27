@@ -4,12 +4,14 @@
 #include "zc_bitmap.c"
 #include "zc_vector.c"
 
-void tree_drawer_draw(bm_t*  bm,
-                      vec_t* workspaces,
-                      int    gap,
-                      int    cols,
-                      float  scale,
-                      char*  font_path);
+void tree_drawer_draw(bm_t*    bm,
+                      vec_t*   workspaces,
+                      int      gap,
+                      int      cols,
+                      float    scale,
+                      char*    font_path,
+                      uint32_t text_main_color,
+                      uint32_t text_sub_color);
 
 #endif
 
@@ -20,12 +22,14 @@ void tree_drawer_draw(bm_t*  bm,
 #include "tree_reader.c"
 #include "zc_graphics.c"
 
-void tree_drawer_draw(bm_t*  bm,
-                      vec_t* workspaces,
-                      int    gap,
-                      int    cols,
-                      float  scale,
-                      char*  font_path)
+void tree_drawer_draw(bm_t*    bm,
+                      vec_t*   workspaces,
+                      int      gap,
+                      int      cols,
+                      float    scale,
+                      char*    font_path,
+                      uint32_t text_main_color,
+                      uint32_t text_sub_color)
 {
   i3_workspace_t* ws0 = workspaces->data[0];
   i3_workspace_t* wsl = workspaces->data[workspaces->length - 1];
@@ -82,8 +86,8 @@ void tree_drawer_draw(bm_t*  bm,
         ts.align       = TA_LEFT;
         ts.valign      = VA_TOP;
         ts.size        = 14.0;
-        ts.textcolor   = 0xFFFFFFFF;
-        ts.backcolor   = 0x000022FF;
+        ts.textcolor   = text_main_color;
+        ts.backcolor   = 0x0000022FF;
         ts.multiline   = 0;
 
         /* highlight focused workspaces's windows */
@@ -114,7 +118,7 @@ void tree_drawer_draw(bm_t*  bm,
 
         ts.margin_top  = 10;
         ts.size        = 12.0;
-        ts.textcolor   = 0xAADDFFFF;
+        ts.textcolor   = text_sub_color;
         ts.backcolor   = 0;
         ts.line_height = 12;
         ts.multiline   = 1;

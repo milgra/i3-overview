@@ -236,7 +236,14 @@ int main(int argc, char* argv[])
               bitmap = bm_new(lay_wth, lay_hth); // REL 5
             }
 
-            tree_drawer_draw(bitmap, workspaces, GAP, COLS, 8.0, config_get("font_path"));
+            tree_drawer_draw(bitmap,
+                             workspaces,
+                             GAP,
+                             COLS,
+                             8.0,
+                             config_get("font_path"),
+                             0xFFFFFFFF,
+                             0xAADDFFFF);
 
             XImage* image = XGetImage(display, view_win, 0, 0, lay_wth, lay_hth, AllPlanes, ZPixmap); // DESTROY 3
 
