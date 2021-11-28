@@ -1,21 +1,17 @@
 # i3-overview
 
-i3-overview is an application that shows thumbnails of all workspaces to make navigation through i3 workspaces easier.
+i3-overview is an application that shows thumbnails for all workspaces to make navigation in i3 easier.
 
-![alt text](screenshot.png)
+![alt text](screenshot1.png)
+![alt text](screenshot2.png)
 
 ## Installation ##
 
-Make sure you have the following libraries installed :
+You will need these libraries :
 
 - X11
 - Xi
 - freetype
-
-Make sure you have the following command line tools installed :
-
-- fc-list
-- i3-msg
 
 Then download and build it :
 
@@ -46,12 +42,21 @@ You can start it/test it immediately with :
 i3-overview
 ```
 
+If it doesn't work, make sure that you have the following command-line utilities ( they are used for font/i3 tree loading ) 
+- fc-list
+- i3-msg
+
+If something is still wrong you can check config internals and error messages in verbose mode
+
+```
+i3-overview -v
+```
+
 To auto-start it after reboot, execute it in i3 config :
 
 ```
 exec --no-startup-id i3-overview
 ```
-
 
 ## Uninstall ##
 
@@ -66,11 +71,38 @@ If you want to customize i3-overview, copy /usr/share/i3-overview/config to ~/.c
 
 Possible keys :
 
-'key_code' : activator key code, get wanted key code with 'xinput test-xi2 --root' , the 'detail' field    
+'meta_code' : activator key code, get wanted key code with 'xinput test-xi2 --root', you will need the 'detail' field    
 'gap' : distance between workspaces  
-'foreground_color' : color of lines and text  
-'background_color_passive' : default background color  
-'background_color_active' : active background color  
-'font_face' : use any string that is output by fc-list  
-'font_size' : size of font  
-'font_index' : font index in font file, leave it 0 if you are unsure  
+'columns' : thumbnail columns  
+'ratio' : thumbnail to workspace ratio  
+'font_face' : font face, use any string that is output by fc-list  
+'text_margin_size' : margin size around text  
+'text_margin_top_size' : margin top size over text  
+'text_title_size' : title text size  
+'text_title_color' : title text color  
+'text_description_size' : description text size  
+'text_description_color' : description text color  
+'text_workspace_size' : workspace number text size  
+'text_workspace_color' : workspace number text color  
+'text_workspace_xshift' : workspace number x shift  
+'text_workspace_yshift' : workspace number y shift  
+'border_color' : border color  
+'background_color' : background color  
+'background_color_focused' : focused background color  
+
+## 5. Contribution/Development ##
+
+Feel free to push fixes/improvements.
+
+Please follow these guidelines :
+
+- use clang format before commiting/after file save
+- use zen_core functions and containers and memory handling
+- make sure that the app is leak free. if you run the dev build ( make dev ) it automagically check for leaks on exit on two levels (zc_memory and clang address sanitizer ) and prints leaks
+- always run all tests before push ( make test )
+
+## 6. Support ##
+
+If you use i3-overview daily please consider donating :
+
+[PayPal.me](www.paypal.me/milgra)

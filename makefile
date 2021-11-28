@@ -1,10 +1,10 @@
+VERSION = 1
 UNAME := $(shell uname -s)
 CC = clang
 
 OBJDIRDEV = bin/obj/dev
 OBJDIRREL = bin/obj/rel
 OBJDIRTEST = bin/obj/test
-VERSION = 1
 
 SOURCES = \
 	$(wildcard src/*.c) \
