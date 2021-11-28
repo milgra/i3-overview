@@ -5,6 +5,12 @@ i3-overview is an application that shows thumbnails for all workspaces to make n
 ![alt text](screenshot1.png)
 ![alt text](screenshot2.png)
 
+## Features ##
+
+- no downscaled and confusing thumbnails, just crystal clear app names and titles
+- layout schema makes workspace identification easier
+- super lightweight, 0% cpu and memory usage when idle
+
 ## Installation ##
 
 You will need these libraries :
