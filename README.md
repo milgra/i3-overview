@@ -48,7 +48,11 @@ You can start it/test it immediately with :
 i3-overview
 ```
 
-If it doesn't work, make sure you have the following command-line utilities ( they are used for font/i3 tree loading ) : 
+Press the meta key (win/mac key) to make i3-overview appear on your screen.
+
+If it doesn't work, check if your meta keycode is 133 with 'xinput test-xi2 --root', the detail field of the event should be 133. If you want a different key to activate i3-overview you have to set it's keycode in i3-overview's config as meta_code, check the Configuration section of this readme.
+
+If it still doesn't work, make sure you have the following command-line utilities ( they are used for font/i3 tree loading ) : 
 - fc-list
 - i3-msg
 
