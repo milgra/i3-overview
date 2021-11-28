@@ -2,8 +2,8 @@
 
 i3-overview is an application that shows thumbnails for all workspaces to make navigation in i3 easier.
 
-![alt text](screenshot1.png)
 ![alt text](screenshot2.png)
+![alt text](screenshot1.png)
 
 ## Features ##
 
