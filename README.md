@@ -104,11 +104,11 @@ Please follow these guidelines :
 
 - use clang format before commiting/after file save
 - use zen_core functions and containers and memory handling
-- make sure that the app is leak free. if you run the dev build ( make dev ) it automagically check for leaks on exit on two levels (zc_memory and clang address sanitizer ) and prints leaks
+- make sure that the app is leak free. if you run the dev build ( make dev ) it automagically checks for leaks on exit on two levels (zc_memory and clang address sanitizer ) and prints leaks
 - always run all tests before push ( make test )
 
 ## 6. Support ##
 
 If you use i3-overview daily please consider donating :
 
-[PayPal.me](www.paypal.me/milgra)
+[paypal.me/milgra](http://www.paypal.me/milgra)
