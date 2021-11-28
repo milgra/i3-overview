@@ -12,6 +12,11 @@ Make sure you have the following libraries installed :
 - Xi
 - freetype
 
+Make sure you have the following command line tools installed :
+
+- fc-list
+- i3-msg
+
 Then download and build it :
 
 ```

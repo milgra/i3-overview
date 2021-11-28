@@ -14,6 +14,9 @@ ratio 8
 # font face, use any string that is output by fc-list
 font_face Terminus (TTF):style=Bold
 
+# margin size around text
+text_margin_size 5
+
 # title text size
 text_title_size 14
 
@@ -32,6 +35,12 @@ text_workspace_size 20
 # workspace number text color
 text_workspace_color #FFFFFFFF
 
+# workspace number x shift
+text_workspace_xshift 5
+
+# workspace number y shift
+text_workspace_yshift 5
+
 # border color
 border_color #AADDFF6FF
 
@@ -40,4 +49,3 @@ background_color #000022FF
 
 # focused background color
 background_color_focused #222266FF
-

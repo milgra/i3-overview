@@ -372,35 +372,38 @@ void gfx_blend_rgba(bm_t* bm, int nx, int ny, bm_t* nbm)
   {
     for (int x = nx; x < ex; x++)
     {
-      int ni = ((y - ny) * nbm->w + (x - nx)) * 4; // new map index
-      int oi = (y * bm->w + x) * 4;                // old map index
-
-      int nr = ndata[ni];
-      int ng = ndata[ni + 1];
-      int nb = ndata[ni + 2];
-      int na = ndata[ni + 3];
-
-      int or = odata[oi];
-      int og = odata[oi + 1];
-      int ob = odata[oi + 2];
-      int oa = odata[oi + 3];
-
-      int a = na + oa * (255 - na) / 255;
-      int r = nr * na / 255 + or *oa / 255 * (255 - na) / 255;
-      int g = ng * na / 255 + og * oa / 255 * (255 - na) / 255;
-      int b = nb * na / 255 + ob * oa / 255 * (255 - na) / 255;
-
-      if (a > 0)
+      if (x > -1 && y > -1)
       {
-        r = r * 255 / a;
-        g = g * 255 / a;
-        b = b * 255 / a;
-      }
+        int ni = ((y - ny) * nbm->w + (x - nx)) * 4; // new map index
+        int oi = (y * bm->w + x) * 4;                // old map index
 
-      odata[oi]     = (uint8_t)(r & 0xFF);
-      odata[oi + 1] = (uint8_t)(g & 0xFF);
-      odata[oi + 2] = (uint8_t)(b & 0xFF);
-      odata[oi + 3] = (uint8_t)(a & 0xFF);
+        int nr = ndata[ni];
+        int ng = ndata[ni + 1];
+        int nb = ndata[ni + 2];
+        int na = ndata[ni + 3];
+
+        int or = odata[oi];
+        int og = odata[oi + 1];
+        int ob = odata[oi + 2];
+        int oa = odata[oi + 3];
+
+        int a = na + oa * (255 - na) / 255;
+        int r = nr * na / 255 + or *oa / 255 * (255 - na) / 255;
+        int g = ng * na / 255 + og * oa / 255 * (255 - na) / 255;
+        int b = nb * na / 255 + ob * oa / 255 * (255 - na) / 255;
+
+        if (a > 0)
+        {
+          r = r * 255 / a;
+          g = g * 255 / a;
+          b = b * 255 / a;
+        }
+
+        odata[oi]     = (uint8_t)(r & 0xFF);
+        odata[oi + 1] = (uint8_t)(g & 0xFF);
+        odata[oi + 2] = (uint8_t)(b & 0xFF);
+        odata[oi + 3] = (uint8_t)(a & 0xFF);
+      }
     }
   }
 }
@@ -441,16 +444,19 @@ void gfx_insert_rgb(bm_t* base, uint8_t* src, int w, int h, int sx, int sy)
   {
     for (int x = sx; x < bx; x++)
     {
-      int si = ((y - sy) * w + (x - sx)) * 4; // src index
-      int bi = (y * base->w + x) * 4;         // base index
+      if (x > -1 && y > -1)
+      {
+        int si = ((y - sy) * w + (x - sx)) * 4; // src index
+        int bi = (y * base->w + x) * 4;         // base index
 
-      uint8_t r = sdata[si];
-      uint8_t g = sdata[si + 1];
-      uint8_t b = sdata[si + 2];
+        uint8_t r = sdata[si];
+        uint8_t g = sdata[si + 1];
+        uint8_t b = sdata[si + 2];
 
-      bdata[bi]     = r;
-      bdata[bi + 1] = g;
-      bdata[bi + 2] = b;
+        bdata[bi]     = r;
+        bdata[bi + 1] = g;
+        bdata[bi + 2] = b;
+      }
     }
   }
 }
@@ -469,18 +475,21 @@ void gfx_insert_rgba(bm_t* base, uint8_t* src, int w, int h, int sx, int sy)
   {
     for (int x = sx; x < bx; x++)
     {
-      int si = ((y - sy) * w + (x - sx)) * 4; // src index
-      int bi = (y * base->w + x) * 4;         // base index
+      if (x > -1 && y > -1)
+      {
+        int si = ((y - sy) * w + (x - sx)) * 4; // src index
+        int bi = (y * base->w + x) * 4;         // base index
 
-      uint8_t r = sdata[si];
-      uint8_t g = sdata[si + 1];
-      uint8_t b = sdata[si + 2];
-      uint8_t a = sdata[si + 3];
+        uint8_t r = sdata[si];
+        uint8_t g = sdata[si + 1];
+        uint8_t b = sdata[si + 2];
+        uint8_t a = sdata[si + 3];
 
-      bdata[bi]     = r;
-      bdata[bi + 1] = g;
-      bdata[bi + 2] = b;
-      bdata[bi + 3] = a;
+        bdata[bi]     = r;
+        bdata[bi + 1] = g;
+        bdata[bi + 2] = b;
+        bdata[bi + 3] = a;
+      }
     }
   }
 }
@@ -533,35 +542,38 @@ void gfx_blend_bitmap(bm_t* bm, bm_t* sbm, int sx, int sy)
   {
     for (int y = sy; y < sy + sbm->h; y++)
     {
-      int si = ((y - sy) * sbm->w + (x - sx)) * 4;
-      int i  = (y * bm->w + x) * 4;
-
-      int sr = sdata[si];
-      int sg = sdata[si + 1];
-      int sb = sdata[si + 2];
-      int sa = sdata[si + 3];
-
-      int dr = data[i];
-      int dg = data[i + 1];
-      int db = data[i + 2];
-      int da = data[i + 3];
-
-      int a = sa + da * (255 - sa) / 255;
-      int r = (sr * sa / 255 + dr * da / 255 * (255 - sa) / 255);
-      int g = (sg * sa / 255 + dg * da / 255 * (255 - sa) / 255);
-      int b = (sb * sa / 255 + db * da / 255 * (255 - sa) / 255);
-
-      if (a > 0)
+      if (x > -1 && y > -1)
       {
-        r = r * 255 / a;
-        g = g * 255 / a;
-        b = b * 255 / a;
-      }
+        int si = ((y - sy) * sbm->w + (x - sx)) * 4;
+        int i  = (y * bm->w + x) * 4;
 
-      data[i]     = (uint8_t)(r & 0xFF);
-      data[i + 1] = (uint8_t)(g & 0xFF);
-      data[i + 2] = (uint8_t)(b & 0xFF);
-      data[i + 3] = (uint8_t)(a & 0xFF);
+        int sr = sdata[si];
+        int sg = sdata[si + 1];
+        int sb = sdata[si + 2];
+        int sa = sdata[si + 3];
+
+        int dr = data[i];
+        int dg = data[i + 1];
+        int db = data[i + 2];
+        int da = data[i + 3];
+
+        int a = sa + da * (255 - sa) / 255;
+        int r = (sr * sa / 255 + dr * da / 255 * (255 - sa) / 255);
+        int g = (sg * sa / 255 + dg * da / 255 * (255 - sa) / 255);
+        int b = (sb * sa / 255 + db * da / 255 * (255 - sa) / 255);
+
+        if (a > 0)
+        {
+          r = r * 255 / a;
+          g = g * 255 / a;
+          b = b * 255 / a;
+        }
+
+        data[i]     = (uint8_t)(r & 0xFF);
+        data[i + 1] = (uint8_t)(g & 0xFF);
+        data[i + 2] = (uint8_t)(b & 0xFF);
+        data[i + 3] = (uint8_t)(a & 0xFF);
+      }
     }
   }
 }
@@ -569,9 +581,9 @@ void gfx_blend_bitmap(bm_t* bm, bm_t* sbm, int sx, int sy)
 void gfx_blend_8(bm_t* bm, int nx, int ny, uint32_t color, unsigned char* ndata, int nw, int nh)
 {
   int ex = nx + nw;
-  if (ex > bm->w) ex = bm->w;
+  if (ex > bm->w - 2) ex = bm->w - 2;
   int ey = ny + nh;
-  if (ey > bm->h) ey = bm->h;
+  if (ey > bm->h - 2) ey = bm->h - 2;
 
   int nr = (color >> 24) & 0xFF;
   int ng = (color >> 16) & 0xFF;
@@ -583,34 +595,37 @@ void gfx_blend_8(bm_t* bm, int nx, int ny, uint32_t color, unsigned char* ndata,
   {
     for (int x = nx; x < ex; x++)
     {
-      int ni = (y - ny) * nw + (x - nx); // new map index
-      int oi = (y * bm->w + x) * 4;      // old map index
-
-      int or = odata[oi];
-      int og = odata[oi + 1];
-      int ob = odata[oi + 2];
-      int oa = odata[oi + 3];
-
-      unsigned char na = ndata[ni];
-
-      // printf("x %i y : %i alpha %i\n", x, y, na);
-
-      int a = na + oa * (255 - na) / 255;
-      int r = nr * na / 255 + or *oa / 255 * (255 - na) / 255;
-      int g = ng * na / 255 + og * oa / 255 * (255 - na) / 255;
-      int b = nb * na / 255 + ob * oa / 255 * (255 - na) / 255;
-
-      if (a > 0)
+      if (x > -1 && y > -1)
       {
-        r = r * 255 / a;
-        g = g * 255 / a;
-        b = b * 255 / a;
-      }
+        int ni = (y - ny) * nw + (x - nx); // new map index
+        int oi = (y * bm->w + x) * 4;      // old map index
 
-      odata[oi]     = (uint8_t)(r & 0xFF);
-      odata[oi + 1] = (uint8_t)(g & 0xFF);
-      odata[oi + 2] = (uint8_t)(b & 0xFF);
-      odata[oi + 3] = (uint8_t)(a & 0xFF);
+        int or = odata[oi];
+        int og = odata[oi + 1];
+        int ob = odata[oi + 2];
+        int oa = odata[oi + 3];
+
+        unsigned char na = ndata[ni];
+
+        // printf("x %i y : %i alpha %i\n", x, y, na);
+
+        int a = na + oa * (255 - na) / 255;
+        int r = nr * na / 255 + or *oa / 255 * (255 - na) / 255;
+        int g = ng * na / 255 + og * oa / 255 * (255 - na) / 255;
+        int b = nb * na / 255 + ob * oa / 255 * (255 - na) / 255;
+
+        if (a > 0)
+        {
+          r = r * 255 / a;
+          g = g * 255 / a;
+          b = b * 255 / a;
+        }
+
+        odata[oi]     = (uint8_t)(r & 0xFF);
+        odata[oi + 1] = (uint8_t)(g & 0xFF);
+        odata[oi + 2] = (uint8_t)(b & 0xFF);
+        odata[oi + 3] = (uint8_t)(a & 0xFF);
+      }
     }
   }
 }
@@ -632,33 +647,36 @@ void gfx_blend_8_1(bm_t* bm, int nx, int ny, uint32_t color, unsigned char* ndat
   {
     for (int x = nx; x < ex; x++)
     {
-      int ni = (y - ny) * nw + (x - nx); // new map index
-      int oi = (y * bm->w + x) * 4;      // old map index
-
-      int or = odata[oi];
-      int og = odata[oi + 1];
-      int ob = odata[oi + 2];
-      int oa = odata[oi + 3];
-
-      unsigned char na = ndata[ni];
-      if (na) na = 0xFF;
-
-      int a = na + oa * (255 - na) / 255;
-      int r = nr * na / 255 + or *oa / 255 * (255 - na) / 255;
-      int g = ng * na / 255 + og * oa / 255 * (255 - na) / 255;
-      int b = nb * na / 255 + ob * oa / 255 * (255 - na) / 255;
-
-      if (a > 0)
+      if (x > -1 && y > -1)
       {
-        r = r * 255 / a;
-        g = g * 255 / a;
-        b = b * 255 / a;
-      }
+        int ni = (y - ny) * nw + (x - nx); // new map index
+        int oi = (y * bm->w + x) * 4;      // old map index
 
-      odata[oi]     = (uint8_t)(r & 0xFF);
-      odata[oi + 1] = (uint8_t)(g & 0xFF);
-      odata[oi + 2] = (uint8_t)(b & 0xFF);
-      odata[oi + 3] = (uint8_t)(a & 0xFF);
+        int or = odata[oi];
+        int og = odata[oi + 1];
+        int ob = odata[oi + 2];
+        int oa = odata[oi + 3];
+
+        unsigned char na = ndata[ni];
+        if (na) na = 0xFF;
+
+        int a = na + oa * (255 - na) / 255;
+        int r = nr * na / 255 + or *oa / 255 * (255 - na) / 255;
+        int g = ng * na / 255 + og * oa / 255 * (255 - na) / 255;
+        int b = nb * na / 255 + ob * oa / 255 * (255 - na) / 255;
+
+        if (a > 0)
+        {
+          r = r * 255 / a;
+          g = g * 255 / a;
+          b = b * 255 / a;
+        }
+
+        odata[oi]     = (uint8_t)(r & 0xFF);
+        odata[oi + 1] = (uint8_t)(g & 0xFF);
+        odata[oi + 2] = (uint8_t)(b & 0xFF);
+        odata[oi + 3] = (uint8_t)(a & 0xFF);
+      }
     }
   }
 }

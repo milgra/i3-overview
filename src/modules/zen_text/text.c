@@ -275,7 +275,8 @@ void text_break_glyphs(
     error = FT_Load_Glyph(font, glyph_index, FT_LOAD_DEFAULT);
     if (error) printf("FT LOAD CHAR ERROR\n");
 
-    /* printf("glyph loaded, width %li height %li horiBearingX %li horiBearingY %li horiAdvance %li vertBearingX %li vertBearingY %li vertAdvance %li\n", */
+    /* printf("GLYPH: %c loaded, width %li height %li horiBearingX %li horiBearingY %li horiAdvance %li vertBearingX %li vertBearingY %li vertAdvance %li\n", */
+    /*        glyph.cp, */
     /*        font->glyph->metrics.width >> 6, */
     /*        font->glyph->metrics.height >> 6, */
     /*        font->glyph->metrics.horiBearingX >> 6, */
@@ -313,7 +314,7 @@ void text_break_glyphs(
     x1 = bbox.xMax >> 6;
     y1 = bbox.yMax >> 6;
 
-    /* printf("x0 %i y0 %i x1 %i y1 %i\n", x0, y0, x1, y1); */
+    // printf("%c x0 %i y0 %i x1 %i y1 %i\n", glyph.cp, x0, y0, x1, y1);
 
     int w = x1 - x0;
     int h = y1 - y0;
@@ -321,9 +322,10 @@ void text_break_glyphs(
     int size = w * h;
 
     /* printf("w %i h %i size %i\n", w, h, size); */
+    // printf("%c bitmap left %i bitmap top %i\n", glyph.cp, font->glyph->bitmap_left, font->glyph->bitmap_top);
 
-    glyph.x       = xpos + x0;
-    glyph.y       = ypos + y0;
+    glyph.x       = xpos + font->glyph->bitmap_left;
+    glyph.y       = ypos - font->glyph->bitmap_top;
     glyph.w       = w;
     glyph.h       = h;
     glyph.x_shift = x_shift;

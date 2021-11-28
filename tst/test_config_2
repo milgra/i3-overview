@@ -3,7 +3,7 @@
 meta_code 133
 
 # distance between workspaces
-gap 25
+gap 5
 
 # columns
 columns 4
@@ -13,6 +13,9 @@ ratio 7
 
 # font face, use any string that is output by fc-list
 font_face Ubuntu
+
+# margin size around text
+text_margin_size 5
 
 # title text size
 text_title_size 15
@@ -31,6 +34,12 @@ text_workspace_size 15
 
 # workspace number text color
 text_workspace_color #DD4455FF
+
+# workspace number x shift
+text_workspace_xshift -4
+
+# workspace number y shift
+text_workspace_yshift 0
 
 # border color
 border_color #FFFFFFFF

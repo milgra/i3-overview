@@ -15,7 +15,9 @@ void tree_drawer_draw(bm_t*       bm,
                       textstyle_t wsnum_style,
                       uint32_t    window_color,
                       uint32_t    focused_color,
-                      uint32_t    border_color);
+                      uint32_t    border_color,
+                      int         wsnum_dx,
+                      int         wsnum_dy);
 
 #endif
 
@@ -35,7 +37,9 @@ void tree_drawer_draw(bm_t*       bm,
                       textstyle_t wsnum_style,
                       uint32_t    window_color,
                       uint32_t    focused_color,
-                      uint32_t    border_color)
+                      uint32_t    border_color,
+                      int         wsnum_dx,
+                      int         wsnum_dy)
 {
   i3_workspace_t* ws0 = workspaces->data[0];
   i3_workspace_t* wsl = workspaces->data[workspaces->length - 1];
@@ -137,7 +141,7 @@ void tree_drawer_draw(bm_t*       bm,
     str_add_bytearray(str, nums);
 
     text_render(str, wsnum_style, tbm);
-    gfx_blend_bitmap(bm, tbm, cx + 4, cy - 22);
+    gfx_blend_bitmap(bm, tbm, cx + wsnum_dx, cy + wsnum_dy);
 
     REL(str); // REL 1
     REL(tbm); // REL 0

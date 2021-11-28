@@ -239,8 +239,8 @@ int main(int argc, char* argv[])
 
             textstyle_t main_style = {
                 .font       = font_path,
-                .margin     = 5,
-                .margin_top = -7,
+                .margin     = config_get_int("text_margin_size"),
+                .margin_top = 0,
                 .align      = TA_LEFT,
                 .valign     = VA_TOP,
                 .size       = config_get_int("text_title_size"),
@@ -251,19 +251,20 @@ int main(int argc, char* argv[])
 
             textstyle_t sub_style = {
                 .font        = font_path,
-                .margin      = 5,
-                .margin_top  = 10,
+                .margin      = config_get_int("text_margin_size"),
+                .margin_top  = config_get_int("text_margin_size") + config_get_int("text_title_size"),
                 .align       = TA_LEFT,
                 .valign      = VA_TOP,
                 .size        = config_get_int("text_description_size"),
                 .textcolor   = cstr_color_from_cstring(config_get("text_description_color")),
                 .backcolor   = 0,
-                .line_height = 12,
+                .line_height = config_get_int("text_description_size"),
                 .multiline   = 1,
             };
 
             textstyle_t wsnum_style = {
                 .font      = font_path,
+                .margin    = config_get_int("text_margin_size"),
                 .align     = TA_RIGHT,
                 .valign    = VA_TOP,
                 .size      = config_get_int("text_workspace_size"),
@@ -281,7 +282,9 @@ int main(int argc, char* argv[])
                              wsnum_style,
                              cstr_color_from_cstring(config_get("background_color")),
                              cstr_color_from_cstring(config_get("background_color_focused")),
-                             cstr_color_from_cstring(config_get("border_color")));
+                             cstr_color_from_cstring(config_get("border_color")),
+                             config_get_int("text_workspace_xshift"),
+                             config_get_int("text_workspace_yshift"));
 
             XImage* image = XGetImage(display, view_win, 0, 0, lay_wth, lay_hth, AllPlanes, ZPixmap); // DESTROY 3
 
