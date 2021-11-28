@@ -38,7 +38,7 @@ no_focus [class="i3-overview"]
 Make it transparent in your compositor, for example, picom
 ```
 opacity-rule = [ 
-"90:class_g *?= 'I3-overview'"
+"90:class_g *?= 'i3-overview'"
 ];
 ```
 
@@ -111,7 +111,7 @@ Please follow these guidelines :
 - make sure that the app is leak free. if you run the dev build ( make dev ) it automagically checks for leaks on exit on two levels (zc_memory and clang address sanitizer ) and prints leaks
 - always run all tests before push ( make test )
 
-## 6. Support ##
+## 6. Donate ##
 
 If you use i3-overview daily please consider donating :
 
