@@ -15,7 +15,10 @@ ratio 8
 font_face Terminus (TTF):style=Bold
 
 # margin size around text
-text_margin_size 5
+text_margin_size 7
+
+# margin top size over text
+text_margin_top_size 4
 
 # title text size
 text_title_size 14
@@ -36,10 +39,10 @@ text_workspace_size 20
 text_workspace_color #FFFFFFFF
 
 # workspace number x shift
-text_workspace_xshift 9
+text_workspace_xshift 11
 
 # workspace number y shift
-text_workspace_yshift -15
+text_workspace_yshift -17
 
 # border color
 border_color #AADDFF6FF

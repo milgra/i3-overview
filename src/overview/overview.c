@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
             textstyle_t main_style = {
                 .font       = font_path,
                 .margin     = config_get_int("text_margin_size"),
-                .margin_top = 0,
+                .margin_top = config_get_int("text_margin_top_size"),
                 .align      = TA_LEFT,
                 .valign     = VA_TOP,
                 .size       = config_get_int("text_title_size"),
@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
             textstyle_t sub_style = {
                 .font        = font_path,
                 .margin      = config_get_int("text_margin_size"),
-                .margin_top  = config_get_int("text_margin_size") + config_get_int("text_title_size"),
+                .margin_top  = config_get_int("text_margin_top_size") + config_get_int("text_title_size"),
                 .align       = TA_LEFT,
                 .valign      = VA_TOP,
                 .size        = config_get_int("text_description_size"),

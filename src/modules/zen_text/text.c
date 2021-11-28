@@ -353,7 +353,7 @@ void text_break_glyphs(
     // printf("kerning x %li y %li\n", kerning.x, kerning.y);
 
     // advance with kerning
-    if (ncp > 0) xpos += kerning.x;
+    if (ncp > 0) xpos += kerning.x >> 6;
 
     // line break
     if (cp == '\n' || cp == '\r') glyph.w = 0; // they should be invisible altough they get an empty unicode font face
