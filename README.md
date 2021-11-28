@@ -13,7 +13,7 @@ You will need these libraries :
 - Xi
 - freetype
 
-Then download and build it :
+Download and build :
 
 ```
 git clone https://github.com/milgra/i3-overview.git
@@ -21,7 +21,7 @@ cd i3-overview
 sudo make install
 ```
 
-Then you have to set it as floating in i3 config, set it as sticky to keep it on screen during workspace switches, and disable autofocus for it to avoid killing it accidentally.
+You have to set it as floating in i3 config, set it as sticky to keep it on screen during workspace switches, and disable autofocus for it to avoid killing it accidentally.
 
 ```
 for_window [class="i3-overview"] floating enable
@@ -42,7 +42,7 @@ You can start it/test it immediately with :
 i3-overview
 ```
 
-If it doesn't work, make sure that you have the following command-line utilities ( they are used for font/i3 tree loading ) 
+If it doesn't work, make sure you have the following command-line utilities ( they are used for font/i3 tree loading ) : 
 - fc-list
 - i3-msg
 
