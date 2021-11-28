@@ -81,24 +81,24 @@ If you want to customize i3-overview, copy /usr/share/i3-overview/config to ~/.c
 
 Possible keys :
 
-'meta_code' : activator key code, get wanted key code with 'xinput test-xi2 --root', you will need the 'detail' field    
-'gap' : distance between workspaces  
-'columns' : thumbnail columns  
-'ratio' : thumbnail to workspace ratio  
-'font_face' : font face, use any string that is output by fc-list  
-'text_margin_size' : margin size around text  
-'text_margin_top_size' : margin top size over text  
-'text_title_size' : title text size  
-'text_title_color' : title text color  
-'text_description_size' : description text size  
-'text_description_color' : description text color  
-'text_workspace_size' : workspace number text size  
-'text_workspace_color' : workspace number text color  
-'text_workspace_xshift' : workspace number x shift  
-'text_workspace_yshift' : workspace number y shift  
-'border_color' : border color  
-'background_color' : background color  
-'background_color_focused' : focused background color  
+**meta_code** : activator key code, get wanted key code with 'xinput test-xi2 --root', you will need the 'detail' field    
+**gap** : distance between workspaces  
+**columns** : thumbnail columns  
+**ratio** : thumbnail to workspace ratio  
+**font_face** : font face, use any string that is output by fc-list  
+**text_margin_size** : margin size around text  
+**text_margin_top_size** : margin top size over text  
+**text_title_size** : title text size  
+**text_title_color** : title text color  
+**text_description_size** : description text size  
+**text_description_color** : description text color  
+**text_workspace_size** : workspace number text size  
+**text_workspace_color** : workspace number text color  
+**text_workspace_xshift** : workspace number x shift  
+**text_workspace_yshift** : workspace number y shift  
+**border_color** : border color  
+**background_color** : background color  
+**background_color_focused** : focused background color  
 
 ## 5. Contribution/Development ##
 
