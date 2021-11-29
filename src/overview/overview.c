@@ -205,16 +205,12 @@ int main(int argc, char* argv[])
             int win_wth = win_attr.width;
             int win_hth = win_attr.height;
 
-            int screen  = DefaultScreen(display);
-            int scr_wth = DisplayWidth(display, screen);
-            int scr_hth = DisplayHeight(display, screen);
-
             /* resize if needed */
 
             if (win_wth != lay_wth || win_hth != lay_hth)
             {
               XResizeWindow(display, view_win, lay_wth, lay_hth);
-              XMoveWindow(display, view_win, scr_wth / 2 - lay_wth / 2, scr_hth / 2 - lay_hth / 2);
+              XMoveWindow(display, view_win, ws->width / 2 - lay_wth / 2, ws->height / 2 - lay_hth / 2);
             }
             /* map if necessary */
 
@@ -222,7 +218,7 @@ int main(int argc, char* argv[])
             {
               window_mapped = 1;
               XMapWindow(display, view_win);
-              XMoveWindow(display, view_win, scr_wth / 2 - lay_wth / 2, scr_hth / 2 - lay_hth / 2);
+              XMoveWindow(display, view_win, ws->width / 2 - lay_wth / 2, ws->height / 2 - lay_hth / 2);
             }
 
             /* flush move, resize and map commands */

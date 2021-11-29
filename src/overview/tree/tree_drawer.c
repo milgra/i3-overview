@@ -46,8 +46,24 @@ void tree_drawer_draw(bm_t*       bm,
 
   int max = ceilf((float)wsl->number / cols) * cols;
 
-  int wsw = ws0->width / scale;
-  int wsh = ws0->height / scale;
+  /* find biggest workspace */
+
+  int wsw = 0;
+  int wsh = 0;
+
+  for (int wsi = 0; wsi < workspaces->length; wsi++)
+  {
+    i3_workspace_t* ws = workspaces->data[wsi];
+
+    if (ws->width > wsw)
+    {
+      wsw = ws->width;
+      wsh = ws->height;
+    }
+  }
+
+  wsw /= scale;
+  wsh /= scale;
 
   /* draw workspace backgrounds including empty */
 
@@ -79,12 +95,12 @@ void tree_drawer_draw(bm_t*       bm,
     {
       i3_window_t* wi = ws->windows->data[wii];
 
-      if (strstr(wi->class, "overview") == NULL)
+      if (strstr(wi->class, "overview") == NULL && strstr(wi->class, "i3bar") == NULL)
       {
         int wiw = roundf((float)wi->width / scale);
         int wih = roundf((float)wi->height / scale);
-        int wix = roundf(((float)wi->x - (float)ws->x) / scale);
-        int wiy = roundf(((float)wi->y - (float)ws->y) / scale);
+        int wix = roundf(((float)wi->x) / scale);
+        int wiy = roundf(((float)wi->y) / scale);
 
         int wcx = cx + wix;
         int wcy = cy + wiy;
@@ -92,36 +108,39 @@ void tree_drawer_draw(bm_t*       bm,
         main_style.backcolor = window_color;
         if (ws->focused) main_style.backcolor = focused_color;
 
-        /* draw class */
+        if (wiw > 5 && wih > 5)
+        {
+          /* draw class */
 
-        bm_t* tbm = bm_new(wiw - 4, wih - 4); // REL 0
+          bm_t* tbm = bm_new(wiw - 4, wih - 4); // REL 0
 
-        str_t* str = str_new(); // REL 1
+          str_t* str = str_new(); // REL 1
 
-        str_add_bytearray(str, wi->class);
+          str_add_bytearray(str, wi->class);
 
-        int grey = 0xFF - rand() % 0x55;
+          int grey = 0xFF - rand() % 0x55;
 
-        text_render(str, main_style, tbm);
+          text_render(str, main_style, tbm);
 
-        str_reset(str);
+          str_reset(str);
 
-        /* draw title */
+          /* draw title */
 
-        str_add_bytearray(str, wi->title);
+          str_add_bytearray(str, wi->title);
 
-        text_render(str, sub_style, tbm);
+          text_render(str, sub_style, tbm);
 
-        /* draw frame */
+          /* draw frame */
 
-        gfx_rect(bm, wcx + 1, wcy + 1, wiw - 2, wih - 2, border_color, 0);
+          gfx_rect(bm, wcx + 1, wcy + 1, wiw - 2, wih - 2, border_color, 0);
 
-        /* insert text bitmap */
+          /* insert text bitmap */
 
-        gfx_insert(bm, tbm, wcx + 2, wcy + 2);
+          gfx_insert(bm, tbm, wcx + 2, wcy + 2);
 
-        REL(str); // REL 1
-        REL(tbm); // REL 0
+          REL(str); // REL 1
+          REL(tbm); // REL 0
+        }
       }
     }
   }
@@ -133,18 +152,21 @@ void tree_drawer_draw(bm_t*       bm,
     int cx = gap + wsi % cols * (wsw + gap);
     int cy = gap + wsi / cols * (wsh + gap);
 
-    bm_t*  tbm     = bm_new(wsw, wsh); // REL 0
-    str_t* str     = str_new();        // REL 1
-    char   nums[4] = {0};
+    if (wsw > 0 && wsh > 0)
+    {
+      bm_t*  tbm     = bm_new(wsw, wsh); // REL 0
+      str_t* str     = str_new();        // REL 1
+      char   nums[4] = {0};
 
-    snprintf(nums, 4, "%i", wsi + 1);
-    str_add_bytearray(str, nums);
+      snprintf(nums, 4, "%i", wsi + 1);
+      str_add_bytearray(str, nums);
 
-    text_render(str, wsnum_style, tbm);
-    gfx_blend_bitmap(bm, tbm, cx + wsnum_dx, cy + wsnum_dy);
+      text_render(str, wsnum_style, tbm);
+      gfx_blend_bitmap(bm, tbm, cx + wsnum_dx, cy + wsnum_dy);
 
-    REL(str); // REL 1
-    REL(tbm); // REL 0
+      REL(str); // REL 1
+      REL(tbm); // REL 0
+    }
   }
 }
 

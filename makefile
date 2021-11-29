@@ -54,13 +54,17 @@ rel: $(OBJECTSREL)
 test: $(OBJECTSTEST)
 	$(CC) $^ -o bin/i3-overview-test $(LDFLAGS) -fsanitize=address
 	bin/i3-overview-test -c tst/test_config_1 -w tst/tst_ws1.json -t tst/tst_tree1.json -o tst/curr_tst1.bmp
-	bin/i3-overview-test -c tst/test_config_2 -w tst/tst_ws2.json -t tst/tst_tree2.json -o tst/curr_tst2.bmp
-	bin/i3-overview-test -c tst/test_config_1 -w tst/tst_ws1.json -t tst/tst_tree1.json -o tst/curr_tst3.bmp
+	bin/i3-overview-test -c tst/test_config_2 -w tst/tst_ws1.json -t tst/tst_tree1.json -o tst/curr_tst2.bmp
+	bin/i3-overview-test -c tst/test_config_1 -w tst/tst_ws2.json -t tst/tst_tree2.json -o tst/curr_tst3.bmp
 	bin/i3-overview-test -c tst/test_config_2 -w tst/tst_ws2.json -t tst/tst_tree2.json -o tst/curr_tst4.bmp
+	bin/i3-overview-test -c tst/test_config_1 -w tst/tst_ws3.json -t tst/tst_tree3.json -o tst/curr_tst5.bmp
+	bin/i3-overview-test -c tst/test_config_2 -w tst/tst_ws3.json -t tst/tst_tree3.json -o tst/curr_tst6.bmp
 	diff tst/tst1.bmp tst/curr_tst1.bmp
 	diff tst/tst2.bmp tst/curr_tst2.bmp
 	diff tst/tst3.bmp tst/curr_tst3.bmp
 	diff tst/tst4.bmp tst/curr_tst4.bmp
+	diff tst/tst5.bmp tst/curr_tst5.bmp
+	diff tst/tst6.bmp tst/curr_tst6.bmp
 
 $(OBJECTSDEV): $(OBJDIRDEV)/%.o: %.c
 	mkdir -p $(@D)

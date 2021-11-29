@@ -41,6 +41,8 @@ void bm_del(void* pointer)
 
 bm_t* bm_new(int the_w, int the_h)
 {
+  assert(the_w > 0 && the_h > 0);
+
   bm_t* bm = CAL(sizeof(bm_t), bm_del, bm_describe); // REL 0
 
   bm->w = the_w;

@@ -128,8 +128,9 @@ int main(int argc, char* argv[])
                      wsnum_style,
                      cstr_color_from_cstring(config_get("background_color")),
                      cstr_color_from_cstring(config_get("background_color_focused")),
-                     cstr_color_from_cstring(config_get("border_color")));
-
+                     cstr_color_from_cstring(config_get("border_color")),
+                     config_get_int("text_workspace_xshift"),
+                     config_get_int("text_workspace_yshift"));
     bm_write(bitmap, output_path);
   }
 

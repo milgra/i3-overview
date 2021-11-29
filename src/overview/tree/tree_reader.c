@@ -208,7 +208,12 @@ void tree_reader_extract(char* ws_json, char* tree_json, vec_t* workspaces)
       {
         i3_workspace_t* ws = workspaces->data[wsi];
 
-        if (ws->number == curr_wspc_n) VADD(ws->windows, wi);
+        if (ws->number == curr_wspc_n)
+        {
+          wi->x -= ws->x;
+          wi->y -= ws->y;
+          VADD(ws->windows, wi);
+        }
       }
 
       REL(wi);   // REL 3
