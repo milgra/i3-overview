@@ -119,5 +119,5 @@ If you use i3-overview daily please consider donating :
 
 ## 7. Version hsitory ##
 
-1.2 Fullscreen crash fixed
+1.2 Fullscreen crash fixed  
 1.1 Multi-Monitor support
