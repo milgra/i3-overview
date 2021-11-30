@@ -57,6 +57,11 @@ void sighandler(int signal)
   alive = 0;
 }
 
+int errorhandler(Display* display, XErrorEvent* event)
+{
+  return 0;
+}
+
 int main(int argc, char* argv[])
 {
   printf("i3-overview v%i.%i by Milan Toth\n", VERSION, BUILD);
@@ -119,6 +124,8 @@ int main(int argc, char* argv[])
   char* font_path = fontconfig_new_path(font_face ? font_face : ""); // REL 4
 
   /* init X11 */
+
+  XSetErrorHandler(errorhandler);
 
   Display* display = XOpenDisplay(NULL);
 
@@ -212,6 +219,7 @@ int main(int argc, char* argv[])
               XResizeWindow(display, view_win, lay_wth, lay_hth);
               XMoveWindow(display, view_win, ws->width / 2 - lay_wth / 2, ws->height / 2 - lay_hth / 2);
             }
+
             /* map if necessary */
 
             if (!window_mapped)
@@ -284,30 +292,34 @@ int main(int argc, char* argv[])
 
             XImage* image = XGetImage(display, view_win, 0, 0, lay_wth, lay_hth, AllPlanes, ZPixmap); // DESTROY 3
 
-            uint8_t* data = bitmap->data;
-
-            for (int y = 0; y < lay_hth; y++)
+            if (image)
             {
-              for (int x = 0; x < lay_wth; x++)
+
+              uint8_t* data = bitmap->data;
+
+              for (int y = 0; y < lay_hth; y++)
               {
-                uint8_t  r     = data[0];
-                uint8_t  g     = data[1];
-                uint8_t  b     = data[2];
-                uint32_t pixel = (r << 16) | (g << 8) | b;
+                for (int x = 0; x < lay_wth; x++)
+                {
+                  uint8_t  r     = data[0];
+                  uint8_t  g     = data[1];
+                  uint8_t  b     = data[2];
+                  uint32_t pixel = (r << 16) | (g << 8) | b;
 
-                XPutPixel(image, x, y, pixel);
+                  XPutPixel(image, x, y, pixel);
 
-                data += 4;
+                  data += 4;
+                }
               }
+
+              GC gc = XCreateGC(display, view_win, 0, NULL); // FREE 0
+              XPutImage(display, view_win, gc, image, 0, 0, 0, 0, lay_wth, lay_hth);
+
+              /* cleanup */
+
+              XFreeGC(display, gc); // FREE 0
+              XDestroyImage(image); // DESTROY 3
             }
-
-            GC gc = XCreateGC(display, view_win, 0, NULL); // FREE 0
-            XPutImage(display, view_win, gc, image, 0, 0, 0, 0, lay_wth, lay_hth);
-
-            /* cleanup */
-
-            XFreeGC(display, gc); // FREE 0
-            XDestroyImage(image); // DESTROY 3
           }
 
           REL(workspaces); // REL 6

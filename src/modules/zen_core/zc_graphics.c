@@ -410,23 +410,34 @@ void gfx_blend_rgba(bm_t* bm, int nx, int ny, bm_t* nbm)
 
 void gfx_insert(bm_t* base, bm_t* src, int sx, int sy)
 {
-  if (sx < 0) sx = 0;
-  if (sy < 0) sy = 0;
+  int bx = sx + src->w;
+  if (bx > base->w) bx = base->w;
+  int by = sy + src->h;
+  if (by > base->h) by = base->h;
 
-  int w = src->w;
-  int h = src->h;
+  uint8_t* sdata = src->data;  // src data
+  uint8_t* bdata = base->data; // base data
 
-  int cols = w;
-  int rows = h;
-
-  if (sx + w > base->w) cols = base->w - sx; // w = base->w - sx;
-  if (sy + h > base->h) rows = base->h - sy; // h = base->h - sy;
-
-  for (int y = sy; y < sy + rows; y++)
+  for (int y = sy; y < by; y++)
   {
-    int bi = (y * base->w + sx) * 4;
-    int si = (y - sy) * src->w * 4;
-    memcpy(base->data + bi, src->data + si, cols * 4);
+    for (int x = sx; x < bx; x++)
+    {
+      if (x > -1 && y > -1)
+      {
+        int si = ((y - sy) * src->w + (x - sx)) * 4; // src index
+        int bi = (y * base->w + x) * 4;              // base index
+
+        uint8_t r = sdata[si];
+        uint8_t g = sdata[si + 1];
+        uint8_t b = sdata[si + 2];
+        uint8_t a = sdata[si + 3];
+
+        bdata[bi]     = r;
+        bdata[bi + 1] = g;
+        bdata[bi + 2] = b;
+        bdata[bi + 3] = a;
+      }
+    }
   }
 }
 

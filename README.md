@@ -116,3 +116,8 @@ Please follow these guidelines :
 If you use i3-overview daily please consider donating :
 
 [paypal.me/milgra](http://www.paypal.me/milgra)
+
+## 7. Version hsitory ##
+
+1.2 Fullscreen crash fixed
+1.1 Multi-Monitor support
