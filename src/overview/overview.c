@@ -166,9 +166,14 @@ int main(int argc, char* argv[])
 
   free(mask.mask); // FREE 0
 
+  int last_code     = 0;
   int meta_code     = config_get_int("meta_code");
+  int sec_code      = config_get_int("secondary_code");
   int meta_pressed  = 0;
+  int sec_pressed   = 0;
   int window_mapped = 0;
+
+  if (sec_code == INT_MAX) sec_pressed = 1;
 
   bm_t* bitmap = bm_new(1, 1); // REL 5
 
@@ -185,155 +190,174 @@ int main(int argc, char* argv[])
 
       if (event->evtype == XI_KeyPress)
       {
-        if (event->detail == meta_code || meta_pressed)
+        if (event->detail != last_code) // avoid key repeat
         {
+          last_code = event->detail;
+
           if (event->detail == meta_code) meta_pressed = 1;
+          if (event->detail == sec_code) sec_pressed = 1;
 
-          vec_t* workspaces = VNEW(); // REL 6
-
-          read_tree(workspaces);
-
-          i3_workspace_t* ws  = workspaces->data[0];
-          i3_workspace_t* wsl = workspaces->data[workspaces->length - 1];
-
-          if (ws->width > 0 && ws->height > 0)
+          if (meta_pressed && sec_pressed)
           {
-            int gap   = config_get_int("gap");
-            int cols  = config_get_int("columns");
-            int rows  = (int)ceilf((float)wsl->number / cols);
-            int ratio = config_get_int("ratio");
+            vec_t* workspaces = VNEW(); // REL 6
 
-            int lay_wth = cols * (ws->width / ratio) + (cols + 1) * gap;
-            int lay_hth = rows * (ws->height / ratio) + (rows + 1) * gap;
+            read_tree(workspaces);
 
-            XWindowAttributes win_attr;
-            XGetWindowAttributes(display, view_win, &win_attr);
+            i3_workspace_t* ws  = workspaces->data[0];
+            i3_workspace_t* wsl = workspaces->data[workspaces->length - 1];
 
-            int win_wth = win_attr.width;
-            int win_hth = win_attr.height;
-
-            /* resize if needed */
-
-            if (win_wth != lay_wth || win_hth != lay_hth)
+            if (ws->width > 0 && ws->height > 0)
             {
-              XResizeWindow(display, view_win, lay_wth, lay_hth);
-              XMoveWindow(display, view_win, ws->width / 2 - lay_wth / 2, ws->height / 2 - lay_hth / 2);
-            }
+              int gap   = config_get_int("gap");
+              int cols  = config_get_int("columns");
+              int rows  = (int)ceilf((float)wsl->number / cols);
+              int ratio = config_get_int("ratio");
 
-            /* map if necessary */
+              int lay_wth = cols * (ws->width / ratio) + (cols + 1) * gap;
+              int lay_hth = rows * (ws->height / ratio) + (rows + 1) * gap;
 
-            if (!window_mapped)
-            {
-              window_mapped = 1;
-              XMapWindow(display, view_win);
-              XMoveWindow(display, view_win, ws->width / 2 - lay_wth / 2, ws->height / 2 - lay_hth / 2);
-            }
+              XWindowAttributes win_attr;
+              XGetWindowAttributes(display, view_win, &win_attr);
 
-            /* flush move, resize and map commands */
+              int win_wth = win_attr.width;
+              int win_hth = win_attr.height;
 
-            XSync(display, False);
+              /* resize if needed */
 
-            /* create overlay bitmap */
-
-            if (bitmap->w != lay_wth || bitmap->h != lay_hth)
-            {
-              REL(bitmap);
-              bitmap = bm_new(lay_wth, lay_hth); // REL 5
-            }
-
-            textstyle_t main_style = {
-                .font       = font_path,
-                .margin     = config_get_int("text_margin_size"),
-                .margin_top = config_get_int("text_margin_top_size"),
-                .align      = TA_LEFT,
-                .valign     = VA_TOP,
-                .size       = config_get_int("text_title_size"),
-                .textcolor  = cstr_color_from_cstring(config_get("text_title_color")),
-                .backcolor  = 0,
-                .multiline  = 0,
-            };
-
-            textstyle_t sub_style = {
-                .font        = font_path,
-                .margin      = config_get_int("text_margin_size"),
-                .margin_top  = config_get_int("text_margin_top_size") + config_get_int("text_title_size"),
-                .align       = TA_LEFT,
-                .valign      = VA_TOP,
-                .size        = config_get_int("text_description_size"),
-                .textcolor   = cstr_color_from_cstring(config_get("text_description_color")),
-                .backcolor   = 0,
-                .line_height = config_get_int("text_description_size"),
-                .multiline   = 1,
-            };
-
-            textstyle_t wsnum_style = {
-                .font      = font_path,
-                .margin    = config_get_int("text_margin_size"),
-                .align     = TA_RIGHT,
-                .valign    = VA_TOP,
-                .size      = config_get_int("text_workspace_size"),
-                .textcolor = cstr_color_from_cstring(config_get("text_workspace_color")),
-                .backcolor = 0x00002200,
-            };
-
-            tree_drawer_draw(bitmap,
-                             workspaces,
-                             gap,
-                             cols,
-                             ratio,
-                             main_style,
-                             sub_style,
-                             wsnum_style,
-                             cstr_color_from_cstring(config_get("background_color")),
-                             cstr_color_from_cstring(config_get("background_color_focused")),
-                             cstr_color_from_cstring(config_get("border_color")),
-                             config_get_int("text_workspace_xshift"),
-                             config_get_int("text_workspace_yshift"));
-
-            XImage* image = XGetImage(display, view_win, 0, 0, lay_wth, lay_hth, AllPlanes, ZPixmap); // DESTROY 3
-
-            if (image)
-            {
-
-              uint8_t* data = bitmap->data;
-
-              for (int y = 0; y < lay_hth; y++)
+              if (win_wth != lay_wth || win_hth != lay_hth)
               {
-                for (int x = 0; x < lay_wth; x++)
-                {
-                  uint8_t  r     = data[0];
-                  uint8_t  g     = data[1];
-                  uint8_t  b     = data[2];
-                  uint32_t pixel = (r << 16) | (g << 8) | b;
-
-                  XPutPixel(image, x, y, pixel);
-
-                  data += 4;
-                }
+                XResizeWindow(display, view_win, lay_wth, lay_hth);
+                XMoveWindow(display, view_win, ws->width / 2 - lay_wth / 2, ws->height / 2 - lay_hth / 2);
               }
 
-              GC gc = XCreateGC(display, view_win, 0, NULL); // FREE 0
-              XPutImage(display, view_win, gc, image, 0, 0, 0, 0, lay_wth, lay_hth);
+              /* map if necessary */
 
-              /* cleanup */
+              if (!window_mapped)
+              {
+                window_mapped = 1;
+                XMapWindow(display, view_win);
+                XMoveWindow(display, view_win, ws->width / 2 - lay_wth / 2, ws->height / 2 - lay_hth / 2);
+              }
 
-              XFreeGC(display, gc); // FREE 0
-              XDestroyImage(image); // DESTROY 3
+              /* flush move, resize and map commands */
+
+              XSync(display, False);
+
+              /* create overlay bitmap */
+
+              if (bitmap->w != lay_wth || bitmap->h != lay_hth)
+              {
+                REL(bitmap);
+                bitmap = bm_new(lay_wth, lay_hth); // REL 5
+              }
+
+              textstyle_t main_style = {
+                  .font       = font_path,
+                  .margin     = config_get_int("text_margin_size"),
+                  .margin_top = config_get_int("text_margin_top_size"),
+                  .align      = TA_LEFT,
+                  .valign     = VA_TOP,
+                  .size       = config_get_int("text_title_size"),
+                  .textcolor  = cstr_color_from_cstring(config_get("text_title_color")),
+                  .backcolor  = 0,
+                  .multiline  = 0,
+              };
+
+              textstyle_t sub_style = {
+                  .font        = font_path,
+                  .margin      = config_get_int("text_margin_size"),
+                  .margin_top  = config_get_int("text_margin_top_size") + config_get_int("text_title_size"),
+                  .align       = TA_LEFT,
+                  .valign      = VA_TOP,
+                  .size        = config_get_int("text_description_size"),
+                  .textcolor   = cstr_color_from_cstring(config_get("text_description_color")),
+                  .backcolor   = 0,
+                  .line_height = config_get_int("text_description_size"),
+                  .multiline   = 1,
+              };
+
+              textstyle_t wsnum_style = {
+                  .font      = font_path,
+                  .margin    = config_get_int("text_margin_size"),
+                  .align     = TA_RIGHT,
+                  .valign    = VA_TOP,
+                  .size      = config_get_int("text_workspace_size"),
+                  .textcolor = cstr_color_from_cstring(config_get("text_workspace_color")),
+                  .backcolor = 0x00002200,
+              };
+
+              tree_drawer_draw(bitmap,
+                               workspaces,
+                               gap,
+                               cols,
+                               ratio,
+                               main_style,
+                               sub_style,
+                               wsnum_style,
+                               cstr_color_from_cstring(config_get("background_color")),
+                               cstr_color_from_cstring(config_get("background_color_focused")),
+                               cstr_color_from_cstring(config_get("border_color")),
+                               config_get_int("text_workspace_xshift"),
+                               config_get_int("text_workspace_yshift"));
+
+              XImage* image = XGetImage(display, view_win, 0, 0, lay_wth, lay_hth, AllPlanes, ZPixmap); // DESTROY 3
+
+              if (image)
+              {
+
+                uint8_t* data = bitmap->data;
+
+                for (int y = 0; y < lay_hth; y++)
+                {
+                  for (int x = 0; x < lay_wth; x++)
+                  {
+                    uint8_t  r     = data[0];
+                    uint8_t  g     = data[1];
+                    uint8_t  b     = data[2];
+                    uint32_t pixel = (r << 16) | (g << 8) | b;
+
+                    XPutPixel(image, x, y, pixel);
+
+                    data += 4;
+                  }
+                }
+
+                GC gc = XCreateGC(display, view_win, 0, NULL); // FREE 0
+                XPutImage(display, view_win, gc, image, 0, 0, 0, 0, lay_wth, lay_hth);
+
+                /* cleanup */
+
+                XFreeGC(display, gc); // FREE 0
+                XDestroyImage(image); // DESTROY 3
+              }
             }
-          }
 
-          REL(workspaces); // REL 6
+            REL(workspaces); // REL 6
+          }
         }
       }
       else if (event->evtype == XI_KeyRelease)
       {
         if (event->detail == meta_code)
         {
-          XUnmapWindow(display, view_win);
-          XSync(display, False);
+          meta_pressed = 0;
+          last_code    = 0;
+        }
+        if (event->detail == sec_code)
+        {
+          sec_pressed = 0;
+          last_code   = 0;
+        }
 
-          meta_pressed  = 0;
-          window_mapped = 0;
+        if (!(meta_pressed && sec_pressed))
+        {
+          if (window_mapped)
+          {
+            XUnmapWindow(display, view_win);
+            XSync(display, False);
+
+            window_mapped = 0;
+          }
         }
       }
     }

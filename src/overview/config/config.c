@@ -17,6 +17,7 @@ int   config_get_bool(char* key);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "kvlines.c"
+#include <limits.h>
 
 map_t* confmap;
 
@@ -60,7 +61,7 @@ int config_get_int(char* key)
   if (val)
     return atoi(val);
   else
-    return 0;
+    return INT_MAX;
 }
 
 void config_describe()

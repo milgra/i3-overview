@@ -82,6 +82,7 @@ If you want to customize i3-overview, copy /usr/share/i3-overview/config to ~/.c
 Possible keys :
 
 **meta_code** : activator key code, get wanted key code with 'xinput test-xi2 --root', you will need the 'detail' field    
+**secondary_code** : secondary key, uncomment it if you want to use it
 **gap** : distance between workspaces  
 **columns** : thumbnail columns  
 **ratio** : thumbnail to workspace ratio  
@@ -119,5 +120,6 @@ If you use i3-overview daily please consider donating :
 
 ## 7. Version hsitory ##
 
+1.3 Secondary key added
 1.2 Fullscreen crash fixed  
 1.1 Multi-Monitor support
