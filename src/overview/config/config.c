@@ -17,6 +17,7 @@ int   config_get_bool(char* key);
 #if __INCLUDE_LEVEL__ == 0
 
 #include "kvlines.c"
+#include "zc_cstring.c"
 #include <limits.h>
 
 map_t* confmap;
@@ -24,6 +25,26 @@ map_t* confmap;
 void config_init()
 {
   confmap = MNEW(); // REL 0
+
+  MPUTR(confmap, "meta_code", cstr_new_cstring("133"));
+  /* secondary_code 23 */
+  MPUTR(confmap, "gap", cstr_new_cstring("25"));
+  MPUTR(confmap, "columns", cstr_new_cstring("5"));
+  MPUTR(confmap, "ratio", cstr_new_cstring("8"));
+  MPUTR(confmap, "font_face", cstr_new_cstring("Terminus (TTF):style=Bold"));
+  MPUTR(confmap, "text_margin_size", cstr_new_cstring("7"));
+  MPUTR(confmap, "text_margin_top_size", cstr_new_cstring("4"));
+  MPUTR(confmap, "text_title_size", cstr_new_cstring("14"));
+  MPUTR(confmap, "text_title_color", cstr_new_cstring("#FFFFFFFF"));
+  MPUTR(confmap, "text_description_size", cstr_new_cstring("12"));
+  MPUTR(confmap, "text_description_color", cstr_new_cstring("#AADDFFFF"));
+  MPUTR(confmap, "text_workspace_size", cstr_new_cstring("20"));
+  MPUTR(confmap, "text_workspace_color", cstr_new_cstring("#FFFFFFFF"));
+  MPUTR(confmap, "text_workspace_xshift", cstr_new_cstring("11"));
+  MPUTR(confmap, "text_workspace_yshift", cstr_new_cstring("-17"));
+  MPUTR(confmap, "border_color", cstr_new_cstring("#AADDFF6FF"));
+  MPUTR(confmap, "background_color", cstr_new_cstring("#000022FF"));
+  MPUTR(confmap, "background_color_focused", cstr_new_cstring("#222266FF"));
 }
 
 void config_destroy()
